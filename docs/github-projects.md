@@ -44,7 +44,7 @@ Pour reproduire ce suivi ailleurs, créer les champs ci-dessus, renseigner les e
 
 ## Points restant à fermer
 
-La protection réelle de `main` et des tags n’est ni configurée ni testée. La feuille Google de rendu n’a pas été éditée : la ligne du groupe n’est pas identifiée. Le cycle de démonstration de l’issue nº 24 a confirmé Backlog, Done puis Ready après réouverture. Les transitions PR restent à démontrer. Ces limites figurent dans [poc-conformite.md](poc-conformite.md).
+La protection réelle de `main` et des tags n’est ni configurée ni testée. La feuille Google de rendu n’a pas été éditée : la ligne du groupe n’est pas identifiée. Le cycle de démonstration de l’issue nº 24 a confirmé Backlog, Done puis Ready après réouverture. La PR nº 25 liée au ticket nº 4 a démontré le passage Ready → Review. La fusion vers Done reste à démontrer après revue. Ces limites figurent dans [poc-conformite.md](poc-conformite.md).
 
 ## Sources officielles
 

@@ -31,7 +31,7 @@ Les huit règles suivantes sont **activées** dans le Project nº 4 :
 | Élément ajouté | Status → Backlog | Issue nº 24 en Backlog, vérifié |
 | Issue clôturée | Status → Done | Issue nº 24 clôturée puis en Done, vérifié |
 | Issue rouverte | Status → Ready | Issue nº 24 rouverte puis en Ready, vérifié |
-| PR liée | Status → Review | Activée ; démonstration restant à effectuer |
+| PR liée | Status → Review | Vérifiée : PR nº 25 liée à l’issue nº 4, transition Ready → Review lue via l’API |
 | PR fusionnée | Status → Done | Activée ; démonstration restant à effectuer |
 | Status passé à Done | Clôturer l’issue | Activée ; démonstration restant à effectuer |
 
