@@ -1,51 +1,56 @@
-# GitHub Projects — préparation du TP
+# GitHub Projects — état du TP et reprise
 
-Le backlog versionné `docs/backlog.json` contient quatre epics et seize sous-tâches frontend/backend, avec critères d’acceptation, estimations, priorités, phases et statuts proposés. La préparation locale ne prouve pas qu’un projet GitHub existe ou que ses workflows sont activés.
+Le [Project public nº 4](https://github.com/users/kuro250104/projects/4) est configuré pour le [dépôt public kuro250104/elite-pack](https://github.com/kuro250104/elite-pack). Le backlog versionné `docs/backlog.json` correspond aux quatre EPICs et seize sous-issues natives créés dans les issues nº 1 à 20.
 
-## Aperçu sans réseau
+## Configuration vérifiée
+
+- `Status` contient, dans cet ordre : `Backlog`, `Ready`, `In Progress`, `Review`, `Done`.
+- `Priority` est un champ à sélection unique : `P1`, `P2`, `P3`.
+- `Estimation` est numérique. Les seize enfants totalisent 81 points ; les EPICs ne sont pas additionnés à ce total.
+- La vue EPICs est une table filtrée sur `type:epic`.
+- La vue Kanban est un board filtré pour exclure les EPICs, groupé par `Status` et trié par `Priority`.
+- La vue backlog est une table avec les champs de suivi visibles.
+- Huit workflows natifs sont activés. Leur détail et les démonstrations sont consignés dans [automations.md](automations.md).
+
+Les statuts `Review` des éléments déjà implémentés correspondent à une revue à effectuer; ils ne déclarent pas toutes les fonctionnalités du jeu livrées. L’ouverture des boosters, la collection et l’économie restent les prochaines phases du développement.
+
+## Aperçu local sans réseau
 
 ```sh
 npm run project:preview
 ```
 
-Le script `scripts/project/bootstrap.ts` valide la hiérarchie et affiche un aperçu Markdown. Par défaut, il n’accède pas à GitHub, ne crée pas de client HTTP et ne nécessite aucun jeton. Aucune nouvelle dépendance n’est ajoutée : il utilise Node.js, Zod et tsx déjà présents.
+Le script `scripts/project/bootstrap.ts` valide la hiérarchie et affiche un aperçu Markdown. Par défaut, il n’accède pas à GitHub, ne crée pas de client HTTP et ne nécessite aucun jeton. Il utilise Node.js, Zod et tsx déjà présents.
 
-## Destination et application explicite
+## Reprendre l’import vers le même projet
 
-Le dépôt retenu est `kuro250104/elite-pack`. Créez ou choisissez **un projet Projects existant** appartenant à `kuro250104` puis relevez son identifiant GraphQL `PVT_…`. Le script exige cet identifiant afin de reprendre le même projet après une interruption; il ne crée pas de projet à chaque exécution.
-
-Le jeton doit être fourni exclusivement par l’environnement `GH_TOKEN`. Ne le placez ni dans une commande copiée, ni dans un fichier versionné. Les permissions nécessaires sont l’écriture des issues et labels du dépôt et l’écriture du projet concerné; le jeton doit également pouvoir lire les issues, le propriétaire et le projet.
+L’application exige explicitement le dépôt, le propriétaire et l’identifiant GraphQL `PVT_…` du **projet existant**. Ne créez pas un autre projet pour reprendre une exécution. L’identifiant GraphQL n’est pas le numéro `4` de l’URL.
 
 ```sh
-npm run project:preview -- --apply --repo kuro250104/elite-pack --owner kuro250104 --project-id PVT_IDENTIFIANT_EXISTANT
+npm run project:preview -- --apply --repo kuro250104/elite-pack --owner kuro250104 --project-id PVT_IDENTIFIANT_DU_PROJET_4
 ```
 
-L’application vérifie le propriétaire du projet, lit toutes les issues ouvertes **et closes**, crée uniquement les labels et issues absents, rattache les sous-issues via l’API REST, ajoute les issues au projet et crée les vues `Kanban Elite Pack` (BOARD) et `Backlog Elite Pack` (TABLE) si leurs noms sont absents. Chaque issue contient un marqueur stable `<!-- elite-pack-backlog:v1:EP01-01 -->`. Une relance retrouve ce marqueur après une écriture interrompue et reprend les liens manquants.
+Le jeton est fourni exclusivement par l’environnement `GH_TOKEN`, jamais dans la commande ni dans un fichier versionné. Les permissions nécessaires sont l’écriture des issues et labels du dépôt ainsi que l’écriture du projet. La connexion du plugin GitHub dans Codex ne fournit pas automatiquement un jeton au script local.
 
-Les corps, labels et états des issues existantes ne sont pas remplacés. Les valeurs des champs et workflows existants ne sont pas modifiées. Un autre parent est un conflit explicite, jamais remplacé automatiquement. Des marqueurs présents dans plusieurs issues arrêtent le script pour permettre une correction humaine. Lancez un seul importeur à la fois : le marqueur facilite la reprise mais n’est pas une contrainte d’unicité atomique côté GitHub. Les réponses réseau ambiguës ne font pas l’objet d’une nouvelle écriture automatique; relancez la commande après vérification.
+L’importeur vérifie le propriétaire, lit toutes les issues ouvertes **et closes**, crée les labels et issues absents, rattache les enfants avec l’API REST des sous-issues et ajoute les issues au projet. Les vues `Kanban Elite Pack` et `Backlog Elite Pack` sont créées seulement si leurs noms sont absents. Les valeurs GraphQL effectivement validées sur l’API sont `BOARD_LAYOUT` et `TABLE_LAYOUT` pour `ProjectV2ViewLayout`.
 
-## Configurer les champs et le tableau
+Chaque issue possède un marqueur stable, par exemple `<!-- elite-pack-backlog:v1:EP01-01 -->`. La reprise réelle a été exécutée : **0 issue créée, 20 réutilisées**. Les corps, labels, états et champs existants sont préservés. Un autre parent ou des marqueurs dupliqués provoquent un arrêt plutôt qu’un remplacement. Un seul importeur doit être exécuté à la fois : le marqueur permet la reprise mais ne constitue pas une contrainte d’unicité atomique côté GitHub.
 
-Cette partie est **manuelle** et reste à effectuer dans GitHub; le script ne prétend pas la réaliser.
+## Ce que le script ne configure pas
 
-1. Dans les paramètres du projet, configurer `Status` avec `Backlog`, `Ready`, `In Progress`, `Review`, `Done` dans cet ordre. Ces noms sont les valeurs techniques du backlog; les corps et critères d’acceptation des issues sont français.
-2. Créer `Estimation` de type Number (points) et `Priority` de type Single select avec `P1`, `P2`, `P3`. Copier les valeurs initiales depuis les corps des sous-issues; les epics ne portent pas d’estimation à additionner aux enfants.
-3. Dans `Kanban Elite Pack`, grouper par `Status`, afficher `Priority`, `Estimation`, labels et parent. Filtrer `-label:"type:epic"` pour afficher les tâches exécutables.
-4. Dans `Backlog Elite Pack`, afficher les titres, labels, parent, statut, priorité et estimation. Trier par priorité; utiliser la hiérarchie des sous-issues pour naviguer depuis les epics.
-5. Créer une vue `Epics`, filtrée par `label:"type:epic"`, pour suivre les quatre objectifs et leur progression. Une vue `POC` peut filtrer `label:"phase:poc"`.
-6. Affecter les statuts proposés après revue. `Review` indique qu’une implémentation locale nécessite une vérification; ce n’est pas une déclaration de livraison. Ne mettre `Done` qu’après validation des critères et merge.
+La configuration des champs, de leurs valeurs, des filtres, du regroupement, du tri et des workflows a été réalisée séparément dans GitHub. Elle est présente et vérifiée dans le Project nº 4 ; le script ne réalise pas automatiquement cette partie lors d’un import vers un autre projet.
 
-## Activer et vérifier les workflows
+Pour reproduire ce suivi ailleurs, créer les champs ci-dessus, renseigner les estimations et priorités à partir du backlog, afficher les tâches dans le Kanban et conserver une vue distincte des EPICs. Les règles de workflow doivent être activées puis démontrées dans le projet concerné.
 
-Dans les paramètres Workflows du projet, activer les automatismes appropriés : nouvelle issue ajoutée → `Backlog`; issue close → `Done`; issue rouverte → `Ready`. Si les opérations du TP exigent un passage automatique à `Review` à l’ouverture d’une PR, configurer le workflow correspondant ou une Action dédiée. Le script ne crée pas d’Action ni de règle distante.
+## Points restant à fermer
 
-Tester les règles avec une issue temporaire autorisée, vérifier les changements de statut, puis conserver la capture dans les preuves du TP. Vérifier également qu’un réimport n’écrase pas un statut déplacé manuellement. Les vues créées par API ont leur disposition, mais le regroupement, les filtres, les champs visibles et les workflows nécessitent la configuration ci-dessus.
+La protection réelle de `main` et des tags n’est ni configurée ni testée. La feuille Google de rendu n’a pas été éditée : la ligne du groupe n’est pas identifiée. Le cycle de démonstration de l’issue nº 24 a confirmé Backlog, Done puis Ready après réouverture. Les transitions PR restent à démontrer. Ces limites figurent dans [poc-conformite.md](poc-conformite.md).
 
-## Sources officielles vérifiées
+## Sources officielles
 
-- [API REST des sous-issues : lecture du parent et rattachement](https://docs.github.com/en/rest/issues/sub-issues)
-- [API GraphQL Projects : items et création des vues BOARD/TABLE](https://docs.github.com/en/graphql/reference/projects)
+- [API REST des sous-issues](https://docs.github.com/en/rest/issues/sub-issues)
+- [API GraphQL Projects : items, champs et vues](https://docs.github.com/en/graphql/reference/projects)
 - [Utiliser l’API pour gérer Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/using-the-api-to-manage-projects)
 - [Workflows intégrés](https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/using-the-built-in-automations)
 
-La référence REST consultée utilise la version `2026-03-10`. Les endpoints et mutations sont documentés; leur disponibilité effective et les permissions du compte doivent être vérifiées lors de l’application autorisée.
+La référence REST consultée utilise la version `2026-03-10`. Les relations, vues et la reprise ont été vérifiées sur le projet réel.
