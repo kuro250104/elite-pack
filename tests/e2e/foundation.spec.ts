@@ -1,0 +1,5 @@
+import { expect, test } from "@playwright/test";
+test("accueil français accessible", async ({page}) => {await page.goto("/"); await expect(page.locator("html")).toHaveAttribute("lang", "fr"); await expect(page.getByRole("heading", {level: 1})).toBeVisible();});
+test("connexion et protection du tableau de bord", async ({page}) => {await page.goto("/connexion"); await expect(page.getByRole("heading", {name: "Connexion", exact: true})).toBeVisible(); await page.goto("/dashboard"); await expect(page).toHaveURL(/\/connexion/);});
+test("page introuvable française et administration protégée", async ({page}) => {await page.goto("/page-inexistante"); await expect(page.getByRole("heading", {name: "Page introuvable"})).toBeVisible(); await page.goto("/admin"); await expect(page).toHaveURL(/\/connexion/);});
+test("accueil utilisable sur mobile", async ({page}) => {await page.setViewportSize({width: 390, height: 844}); await page.goto("/"); await expect(page.getByRole("link", {name: "Créer mon compte"})).toBeVisible(); expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);});

@@ -1,0 +1,12 @@
+node_modules/
+.next/
+.env*
+!.env.example
+src/generated/prisma/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+.idea/
+.DS_Store
+.next-e2e/

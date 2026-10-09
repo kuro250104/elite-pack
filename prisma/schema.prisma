@@ -1,0 +1,426 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  PLAYER
+  ADMIN
+}
+
+enum Rarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
+  MYTHIC
+}
+
+enum AcquisitionSource {
+  BOOSTER
+  MARKETPLACE
+  REWARD
+  ADMIN
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  CANCELLED
+}
+
+enum WalletTransactionType {
+  INITIAL_BALANCE
+  REWARD
+  BANK_SALE
+  MARKETPLACE_SALE
+  MARKETPLACE_PURCHASE
+  BOOSTER_PURCHASE
+  ADMIN_ADJUSTMENT
+}
+
+enum BoosterCategory {
+  SPORT
+  MULTISPORT
+  EVENT
+}
+
+enum DataProvider {
+  THESPORTSDB
+  WIKIDATA
+  OLYMPEDIA
+}
+
+enum ImportStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id               String               @id @default(cuid())
+  name             String?
+  email            String?              @unique
+  emailVerified    DateTime?            @db.Timestamptz(3)
+  image            String?
+  role             Role                 @default(PLAYER)
+  createdAt        DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime             @updatedAt @db.Timestamptz(3)
+  accounts         Account[]
+  sessions         Session[]
+  wallet           Wallet?
+  passiveBoosters  PassiveBoosterState?
+  cards            CardInstance[]
+  discoveries      CardDiscovery[]
+  listings         MarketplaceListing[] @relation("Seller")
+  purchases        MarketplaceListing[] @relation("Buyer")
+  boosterInventory BoosterInventory[]
+  openings         BoosterOpening[]
+  auditLogs        AdminAuditLog[]
+  importJobs       ImportJob[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime @db.Timestamptz(3)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime @db.Timestamptz(3)
+
+  @@unique([identifier, token])
+}
+
+model Sport {
+  id               String           @id @default(cuid())
+  slug             String           @unique
+  nameFr           String
+  providerName     String
+  providerId       String?          @unique
+  category         String?
+  icon             String?
+  active           Boolean          @default(false)
+  createdAt        DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime         @updatedAt @db.Timestamptz(3)
+  athletes         Athlete[]
+  boosterSports    BoosterSport[]
+  selectedOpenings BoosterOpening[]
+}
+
+model Athlete {
+  id                     String              @id @default(cuid())
+  name                   String
+  birthDate              DateTime?           @db.Date
+  nationality            String?
+  sportId                String
+  currentTeam            String?
+  position               String?
+  biography              String?             @db.Text
+  statistics             Json?
+  achievements           Json?
+  prestigeScore          Int                 @default(0)
+  prestigeOverride       Int?
+  administratorOverrides Json?
+  active                 Boolean             @default(true)
+  createdAt              DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime            @updatedAt @db.Timestamptz(3)
+  sport                  Sport               @relation(fields: [sportId], references: [id], onDelete: Restrict)
+  externalIds            AthleteExternalId[]
+  image                  AthleteImage?
+  editions               CardEdition[]
+
+  @@index([sportId])
+  @@index([name])
+  @@index([nationality])
+}
+
+model AthleteExternalId {
+  id         String       @id @default(cuid())
+  athleteId  String
+  provider   DataProvider
+  externalId String
+  importedAt DateTime     @default(now()) @db.Timestamptz(3)
+  athlete    Athlete      @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, externalId])
+  @@unique([athleteId, provider])
+}
+
+model AthleteImage {
+  id                 String  @id @default(cuid())
+  athleteId          String  @unique
+  url                String
+  originalUrl        String
+  source             String
+  license            String?
+  licenseUrl         String?
+  attribution        String?
+  usageRestrictions  String? @db.Text
+  approvedForDisplay Boolean @default(false)
+  athlete            Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+}
+
+model CardEdition {
+  id              String           @id @default(cuid())
+  athleteId       String
+  name            String
+  rarity          Rarity
+  visualDesign    Json?
+  baseValue       BigInt           @default(0)
+  maxSupply       Int?
+  mintedSupply    Int              @default(0)
+  active          Boolean          @default(false)
+  releaseDate     DateTime         @default(now()) @db.Timestamptz(3)
+  season          String?
+  competition     String?
+  createdAt       DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime         @updatedAt @db.Timestamptz(3)
+  athlete         Athlete          @relation(fields: [athleteId], references: [id], onDelete: Restrict)
+  instances       CardInstance[]
+  discoveries     CardDiscovery[]
+  boosterEditions BoosterEdition[]
+
+  @@index([athleteId])
+  @@index([rarity, active])
+}
+
+model CardInstance {
+  id                String               @id @default(cuid())
+  editionId         String
+  ownerId           String?
+  serialNumber      Int?
+  mintedAt          DateTime             @default(now()) @db.Timestamptz(3)
+  acquiredAt        DateTime             @default(now()) @db.Timestamptz(3)
+  acquisitionSource AcquisitionSource
+  retiredAt         DateTime?            @db.Timestamptz(3)
+  openingId         String?
+  edition           CardEdition          @relation(fields: [editionId], references: [id], onDelete: Restrict)
+  owner             User?                @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  opening           BoosterOpening?      @relation(fields: [openingId], references: [id], onDelete: Restrict)
+  listings          MarketplaceListing[]
+
+  @@unique([editionId, serialNumber])
+  @@index([ownerId, acquiredAt])
+}
+
+model CardDiscovery {
+  userId       String
+  editionId    String
+  discoveredAt DateTime    @default(now()) @db.Timestamptz(3)
+  user         User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  edition      CardEdition @relation(fields: [editionId], references: [id], onDelete: Restrict)
+
+  @@id([userId, editionId])
+}
+
+model GameConfiguration {
+  id                     String   @id @default("default")
+  passiveIntervalSeconds Int      @default(900)
+  passiveMaxStock        Int      @default(10)
+  startingBalance        BigInt   @default(0)
+  bankResaleBasisPoints  Int      @default(6000)
+  updatedAt              DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model PassiveBoosterState {
+  userId           String    @id
+  stock            Int       @default(0)
+  nextGenerationAt DateTime? @db.Timestamptz(3)
+  generatedTotal   BigInt    @default(0)
+  updatedAt        DateTime  @updatedAt @db.Timestamptz(3)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+}
+
+model BoosterType {
+  id          String                @id @default(cuid())
+  slug        String                @unique
+  nameFr      String
+  category    BoosterCategory
+  cardCount   Int                   @default(5)
+  price       BigInt                @default(0)
+  active      Boolean               @default(false)
+  startsAt    DateTime?             @db.Timestamptz(3)
+  endsAt      DateTime?             @db.Timestamptz(3)
+  season      String?
+  competition String?
+  createdAt   DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime              @updatedAt @db.Timestamptz(3)
+  sports      BoosterSport[]
+  editions    BoosterEdition[]
+  weights     BoosterRarityWeight[]
+  inventory   BoosterInventory[]
+  openings    BoosterOpening[]
+}
+
+model BoosterSport {
+  boosterTypeId String
+  sportId       String
+  boosterType   BoosterType @relation(fields: [boosterTypeId], references: [id], onDelete: Cascade)
+  sport         Sport       @relation(fields: [sportId], references: [id], onDelete: Restrict)
+
+  @@id([boosterTypeId, sportId])
+}
+
+model BoosterEdition {
+  boosterTypeId String
+  editionId     String
+  boosterType   BoosterType @relation(fields: [boosterTypeId], references: [id], onDelete: Cascade)
+  edition       CardEdition @relation(fields: [editionId], references: [id], onDelete: Restrict)
+
+  @@id([boosterTypeId, editionId])
+}
+
+model BoosterRarityWeight {
+  boosterTypeId     String
+  rarity            Rarity
+  weightBasisPoints Int
+  boosterType       BoosterType @relation(fields: [boosterTypeId], references: [id], onDelete: Cascade)
+
+  @@id([boosterTypeId, rarity])
+}
+
+model BoosterInventory {
+  userId        String
+  boosterTypeId String
+  quantity      Int         @default(0)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  boosterType   BoosterType @relation(fields: [boosterTypeId], references: [id], onDelete: Restrict)
+
+  @@id([userId, boosterTypeId])
+}
+
+model BoosterOpening {
+  id                    String         @id @default(cuid())
+  userId                String
+  boosterTypeId         String
+  selectedSportId       String?
+  usedPassiveStock      Boolean
+  idempotencyKey        String
+  configurationSnapshot Json
+  openedAt              DateTime       @default(now()) @db.Timestamptz(3)
+  user                  User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  boosterType           BoosterType    @relation(fields: [boosterTypeId], references: [id], onDelete: Restrict)
+  selectedSport         Sport?         @relation(fields: [selectedSportId], references: [id], onDelete: Restrict)
+  cards                 CardInstance[]
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, openedAt])
+}
+
+model Wallet {
+  userId           String              @id
+  balance          BigInt              @default(0)
+  lifetimeEarnings BigInt              @default(0)
+  lifetimeSpending BigInt              @default(0)
+  updatedAt        DateTime            @updatedAt @db.Timestamptz(3)
+  user             User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+  transactions     WalletTransaction[]
+}
+
+model WalletTransaction {
+  id             String                @id @default(cuid())
+  walletId       String
+  type           WalletTransactionType
+  amount         BigInt
+  balanceAfter   BigInt
+  idempotencyKey String
+  referenceId    String?
+  metadata       Json?
+  createdAt      DateTime              @default(now()) @db.Timestamptz(3)
+  wallet         Wallet                @relation(fields: [walletId], references: [userId], onDelete: Restrict)
+
+  @@unique([walletId, idempotencyKey])
+  @@index([walletId, createdAt])
+}
+
+model MarketplaceListing {
+  id                     String        @id @default(cuid())
+  cardInstanceId         String
+  sellerId               String
+  buyerId                String?
+  price                  BigInt
+  status                 ListingStatus @default(ACTIVE)
+  createdAt              DateTime      @default(now()) @db.Timestamptz(3)
+  closedAt               DateTime?     @db.Timestamptz(3)
+  purchaseIdempotencyKey String?       @unique
+  card                   CardInstance  @relation(fields: [cardInstanceId], references: [id], onDelete: Restrict)
+  seller                 User          @relation("Seller", fields: [sellerId], references: [id], onDelete: Restrict)
+  buyer                  User?         @relation("Buyer", fields: [buyerId], references: [id], onDelete: Restrict)
+
+  @@index([status, price])
+  @@index([sellerId, createdAt])
+  @@index([cardInstanceId])
+}
+
+model ImportJob {
+  id             String       @id @default(cuid())
+  provider       DataProvider
+  actorId        String?
+  idempotencyKey String?
+  result         Json?
+  actor          User?        @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  status         ImportStatus @default(PENDING)
+  parameters     Json
+  processedCount Int          @default(0)
+  errorMessage   String?      @db.Text
+  startedAt      DateTime?    @db.Timestamptz(3)
+  completedAt    DateTime?    @db.Timestamptz(3)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+
+  @@unique([actorId, idempotencyKey])
+  @@index([createdAt])
+  @@index([status, createdAt])
+}
+
+model RateLimitBucket {
+  key           String    @id
+  windowStart   DateTime  @db.Timestamptz(3)
+  count         Int       @default(0)
+  nextAllowedAt DateTime? @db.Timestamptz(3)
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  entityType String
+  entityId   String?
+  before     Json?
+  after      Json?
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  actor      User     @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([actorId, createdAt])
+}

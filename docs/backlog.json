@@ -1,0 +1,369 @@
+{
+  "name": "Elite Pack — POC et MVP",
+  "epics": [
+    {
+      "id": "EP01",
+      "title": "Socle et accès joueur",
+      "goal": "Permettre à un développeur de démarrer et sécuriser les espaces du jeu.",
+      "labels": [
+        "type:epic"
+      ],
+      "priority": "P1",
+      "tasks": [
+        {
+          "id": "EP01-01",
+          "parentId": "EP01",
+          "title": "Préparer l’accueil français et le système de design",
+          "area": "frontend",
+          "estimate": 3,
+          "priority": "P1",
+          "status": "Review",
+          "phase": "POC",
+          "acceptanceCriteria": [
+            "Interface française responsive, couleurs de rareté et navigation au clavier.",
+            "Parcours Playwright desktop et mobile réussis."
+          ],
+          "labels": [
+            "area:frontend",
+            "type:feature",
+            "priority:p1",
+            "phase:poc"
+          ]
+        },
+        {
+          "id": "EP01-02",
+          "parentId": "EP01",
+          "title": "Configurer Prisma, PostgreSQL et les sessions Auth.js",
+          "area": "backend",
+          "estimate": 5,
+          "priority": "P1",
+          "status": "Review",
+          "phase": "POC",
+          "acceptanceCriteria": [
+            "Installation reproductible, migration non destructive et seed idempotent.",
+            "Accès joueur/admin protégé et création atomique du joueur."
+          ],
+          "labels": [
+            "area:backend",
+            "type:feature",
+            "priority:p1",
+            "phase:poc"
+          ]
+        },
+        {
+          "id": "EP01-03",
+          "parentId": "EP01",
+          "title": "Configurer les contrôles automatiques et le guide contributeur",
+          "area": "backend",
+          "estimate": 3,
+          "priority": "P1",
+          "status": "Ready",
+          "phase": "POC",
+          "acceptanceCriteria": [
+            "CI lint, typage, unités, intégration, navigateur et build.",
+            "README et CONTRIBUTING expliquent installation, branches et versions."
+          ],
+          "labels": [
+            "area:backend",
+            "type:feature",
+            "priority:p1",
+            "phase:poc"
+          ]
+        },
+        {
+          "id": "EP01-04",
+          "parentId": "EP01",
+          "title": "Valider les pages de connexion et de profil",
+          "area": "frontend",
+          "estimate": 3,
+          "priority": "P2",
+          "status": "Backlog",
+          "phase": "MVP",
+          "acceptanceCriteria": [
+            "Connexion OAuth réelle testée avec fournisseur configuré.",
+            "Messages français et profil accessible sans informations sensibles."
+          ],
+          "labels": [
+            "area:frontend",
+            "type:feature",
+            "priority:p2",
+            "phase:mvp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "EP02",
+      "title": "Catalogue sportif et imports",
+      "goal": "Conserver des identités sportives fiables avec corrections administratives traçables.",
+      "labels": [
+        "type:epic"
+      ],
+      "priority": "P1",
+      "tasks": [
+        {
+          "id": "EP02-01",
+          "parentId": "EP02",
+          "title": "Créer l’interface administrative du catalogue",
+          "area": "frontend",
+          "estimate": 5,
+          "priority": "P1",
+          "status": "Review",
+          "phase": "POC",
+          "acceptanceCriteria": [
+            "Imports ciblés, recherche, historique et corrections accessibles.",
+            "Sports désactivés avant validation et aucune image sans droits."
+          ],
+          "labels": [
+            "area:frontend",
+            "type:feature",
+            "priority:p1",
+            "phase:poc"
+          ]
+        },
+        {
+          "id": "EP02-02",
+          "parentId": "EP02",
+          "title": "Importer TheSportsDB avec déduplication et quota partagé",
+          "area": "backend",
+          "estimate": 5,
+          "priority": "P1",
+          "status": "Review",
+          "phase": "POC",
+          "acceptanceCriteria": [
+            "Identifiants externes uniques, homonymes à valider et overrides préservés.",
+            "Tests de concurrence, idempotence, autorisation et rollback réussis."
+          ],
+          "labels": [
+            "area:backend",
+            "type:feature",
+            "priority:p1",
+            "phase:poc"
+          ]
+        },
+        {
+          "id": "EP02-03",
+          "parentId": "EP02",
+          "title": "Enrichir les identités avec Wikidata",
+          "area": "backend",
+          "estimate": 5,
+          "priority": "P2",
+          "status": "Backlog",
+          "phase": "MVP",
+          "acceptanceCriteria": [
+            "Lier des identifiants intersources sans duplications automatiques risquées.",
+            "Préserver les champs corrigés et journaliser la provenance."
+          ],
+          "labels": [
+            "area:backend",
+            "type:feature",
+            "priority:p2",
+            "phase:mvp"
+          ]
+        },
+        {
+          "id": "EP02-04",
+          "parentId": "EP02",
+          "title": "Créer la validation des images et le visuel de remplacement",
+          "area": "frontend",
+          "estimate": 3,
+          "priority": "P2",
+          "status": "Backlog",
+          "phase": "MVP",
+          "acceptanceCriteria": [
+            "Licence, attribution, restriction et URL visibles à l’administrateur.",
+            "Seules les images autorisées sont affichées dans le jeu."
+          ],
+          "labels": [
+            "area:frontend",
+            "type:feature",
+            "priority:p2",
+            "phase:mvp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "EP03",
+      "title": "Cartes et collection",
+      "goal": "Distinguer athlètes, éditions et exemplaires et consulter une collection personnelle.",
+      "labels": [
+        "type:epic"
+      ],
+      "priority": "P1",
+      "tasks": [
+        {
+          "id": "EP03-01",
+          "parentId": "EP03",
+          "title": "Sécuriser la création des éditions et la frappe d’exemplaires",
+          "area": "backend",
+          "estimate": 8,
+          "priority": "P1",
+          "status": "Backlog",
+          "phase": "MVP",
+          "acceptanceCriteria": [
+            "Doublons autorisés; chaque exemplaire possède au maximum un propriétaire.",
+            "Les éditions limitées ne dépassent jamais leur quantité, même en concurrence."
+          ],
+          "labels": [
+            "area:backend",
+            "type:feature",
+            "priority:p1",
+            "phase:mvp"
+          ]
+        },
+        {
+          "id": "EP03-02",
+          "parentId": "EP03",
+          "title": "Concevoir les cartes et la grille de collection",
+          "area": "frontend",
+          "estimate": 5,
+          "priority": "P1",
+          "status": "Backlog",
+          "phase": "MVP",
+          "acceptanceCriteria": [
+            "Nom, sport, nationalité, rareté, édition et prestige lisibles.",
+            "Grille responsive, pagination et nombre de doublons."
+          ],
+          "labels": [
+            "area:frontend",
+            "type:feature",
+            "priority:p1",
+            "phase:mvp"
+          ]
+        },
+        {
+          "id": "EP03-03",
+          "parentId": "EP03",
+          "title": "Créer les filtres et les lectures paginées de collection",
+          "area": "backend",
+          "estimate": 5,
+          "priority": "P2",
+          "status": "Backlog",
+          "phase": "MVP",
+          "acceptanceCriteria": [
+            "OwnerId issu exclusivement de la session serveur.",
+            "Filtres et tris indexés, découverte conservée après revente."
+          ],
+          "labels": [
+            "area:backend",
+            "type:feature",
+            "priority:p2",
+            "phase:mvp"
+          ]
+        },
+        {
+          "id": "EP03-04",
+          "parentId": "EP03",
+          "title": "Créer l’encyclopédie des athlètes",
+          "area": "frontend",
+          "estimate": 5,
+          "priority": "P2",
+          "status": "Backlog",
+          "phase": "MVP",
+          "acceptanceCriteria": [
+            "Biographie française, éditions et découvertes historiques.",
+            "États vide, chargement et erreur accessibles."
+          ],
+          "labels": [
+            "area:frontend",
+            "type:feature",
+            "priority:p2",
+            "phase:mvp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "EP04",
+      "title": "Boosters gratuits et ouverture",
+      "goal": "Choisir un sport et ouvrir un booster dont le serveur garantit les règles.",
+      "labels": [
+        "type:epic"
+      ],
+      "priority": "P1",
+      "tasks": [
+        {
+          "id": "EP04-01",
+          "parentId": "EP04",
+          "title": "Implémenter la génération passive transactionnelle",
+          "area": "backend",
+          "estimate": 8,
+          "priority": "P1",
+          "status": "Backlog",
+          "phase": "MVP",
+          "acceptanceCriteria": [
+            "Un booster toutes les 15 minutes, stock plafonné à 10, hors ligne.",
+            "Reprise après consommation et conservation du cycle partiel vérifiées."
+          ],
+          "labels": [
+            "area:backend",
+            "type:feature",
+            "priority:p1",
+            "phase:mvp"
+          ]
+        },
+        {
+          "id": "EP04-02",
+          "parentId": "EP04",
+          "title": "Créer l’interface de stock et de sélection du sport",
+          "area": "frontend",
+          "estimate": 5,
+          "priority": "P1",
+          "status": "Backlog",
+          "phase": "MVP",
+          "acceptanceCriteria": [
+            "Stock, plafond, prochain booster et sport sélectionné lisibles.",
+            "Ouverture désactivée à zéro et horloge client informative seulement."
+          ],
+          "labels": [
+            "area:frontend",
+            "type:feature",
+            "priority:p1",
+            "phase:mvp"
+          ]
+        },
+        {
+          "id": "EP04-03",
+          "parentId": "EP04",
+          "title": "Implémenter le tirage sécurisé et la consommation atomique",
+          "area": "backend",
+          "estimate": 8,
+          "priority": "P1",
+          "status": "Backlog",
+          "phase": "MVP",
+          "acceptanceCriteria": [
+            "Probabilités lues en base, hasard cryptographique et pools vérifiés.",
+            "Aucun booster consommé si un pool est vide; idempotence et concurrence testées."
+          ],
+          "labels": [
+            "area:backend",
+            "type:feature",
+            "priority:p1",
+            "phase:mvp"
+          ]
+        },
+        {
+          "id": "EP04-04",
+          "parentId": "EP04",
+          "title": "Créer l’animation d’ouverture et la révélation",
+          "area": "frontend",
+          "estimate": 5,
+          "priority": "P2",
+          "status": "Backlog",
+          "phase": "MVP",
+          "acceptanceCriteria": [
+            "Animation accessible compatible reduced-motion.",
+            "Résultat fourni uniquement par le serveur, aucune frappe côté navigateur."
+          ],
+          "labels": [
+            "area:frontend",
+            "type:feature",
+            "priority:p2",
+            "phase:mvp"
+          ]
+        }
+      ]
+    }
+  ]
+}

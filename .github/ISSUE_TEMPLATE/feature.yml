@@ -1,0 +1,41 @@
+name: Fonctionnalité
+description: Préparer une tâche frontend ou backend liée à un EPIC.
+title: "[FEATURE] "
+labels: ["type:feature"]
+body:
+  - type: input
+    id: parent
+    attributes:
+      label: EPIC parent
+      description: Indiquer le numéro ou l’URL de l’EPIC existant ; créer ensuite le lien natif « Add parent issue ».
+      placeholder: "#123 ou URL de l’EPIC"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Domaine
+      options: [Frontend, Backend, Transverse]
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Comportement attendu
+      description: Décrire le besoin et les changements observables en français.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critères d’acceptation
+      description: Donner des critères vérifiables et les règles métier concernées.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation et tests
+      description: Préciser les tests nécessaires, les contraintes d’accès, les migrations et les dépendances.
+    validations:
+      required: true

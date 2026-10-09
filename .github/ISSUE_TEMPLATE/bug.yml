@@ -1,0 +1,36 @@
+name: Anomalie
+description: Signaler un comportement incorrect avec une reproduction vérifiable.
+title: "[BUG] "
+labels: ["type:bug"]
+body:
+  - type: input
+    id: parent
+    attributes:
+      label: EPIC parent
+      description: Indiquer l’EPIC concerné si l’anomalie fait partie d’un chantier existant.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Domaine
+      options: [Frontend, Backend, Transverse]
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Étapes de reproduction
+      description: Décrire les actions, le navigateur et le contexte sans publier de données personnelles ni secrets.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Résultat attendu
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Résultat observé
+    validations:
+      required: true

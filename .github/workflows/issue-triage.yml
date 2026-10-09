@@ -1,0 +1,48 @@
+name: Classer les nouvelles issues
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: triage-${{ github.event.issue.number }}
+  cancel-in-progress: false
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ajouter les labels du backlog
+        uses: actions/github-script@v9
+        with:
+          script: |
+            // Le contenu de l’issue est une donnée ; aucune interpolation dans du code ou shell.
+            const issue = context.payload.issue;
+            if (!issue || issue.pull_request) return;
+            const labels = ['status:backlog'];
+            const body = issue.body || '';
+            const match = body.match(/(?:^|\n)### Domaine\s*\n\s*(Frontend|Backend|Transverse)(?:\s*\n|$)/);
+            const areas = { Frontend: 'area:frontend', Backend: 'area:backend', Transverse: 'area:transverse' };
+            if (match) labels.push(areas[match[1]]);
+            const definitions = {
+              'status:backlog': { color: '6B7280', description: 'À prioriser dans le backlog' },
+              'area:frontend': { color: '2563EB', description: 'Interface et expérience utilisateur' },
+              'area:backend': { color: '7C3AED', description: 'Services, données et API' },
+              'area:transverse': { color: '059669', description: 'Travail commun à plusieurs domaines' },
+            };
+            for (const label of labels) {
+              try {
+                await github.rest.issues.getLabel({ ...context.repo, name: label });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                try {
+                  await github.rest.issues.createLabel({ ...context.repo, name: label, ...definitions[label] });
+                } catch (creationError) {
+                  // Un autre événement peut avoir créé le même label simultanément.
+                  if (creationError.status !== 422) throw creationError;
+                  await github.rest.issues.getLabel({ ...context.repo, name: label });
+                }
+              }
+            }
+            await github.rest.issues.addLabels({ ...context.repo, issue_number: issue.number, labels });

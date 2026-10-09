@@ -1,0 +1,76 @@
+name: Vérifications du projet
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verification:
+    name: Lint, types, tests et compilation
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+      DATABASE_URL: postgresql://elite_pack@127.0.0.1:5432/elite_pack?schema=public
+      TEST_DATABASE_URL: postgresql://elite_pack@127.0.0.1:5432/elite_pack
+      AUTH_URL: http://127.0.0.1:3100
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: elite_pack
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: elite_pack
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U elite_pack -d elite_pack"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Lire le dépôt
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Configurer Node.js 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Installer les dépendances verrouillées
+        run: npm ci
+      - name: Générer un secret éphémère pour les tests
+        shell: bash
+        run: |
+          test_auth_secret="$(openssl rand -base64 48)"
+          echo "::add-mask::$test_auth_secret"
+          echo "AUTH_SECRET=$test_auth_secret" >> "$GITHUB_ENV"
+      - name: Générer Prisma
+        run: npm run db:generate
+      - name: Vérifier le schéma Prisma
+        run: npm run db:validate
+      - name: Vérifier le style
+        run: npm run lint
+      - name: Vérifier les types
+        run: npm run typecheck
+      - name: Exécuter les tests unitaires
+        run: npm test
+      - name: Appliquer les migrations sur la base éphémère
+        run: npm run db:deploy
+      - name: Initialiser la configuration de test
+        run: npm run db:seed
+      - name: Exécuter les tests PostgreSQL
+        run: npm run test:integration
+      - name: Installer Chromium et ses dépendances système
+        run: npx playwright install --with-deps chromium
+      - name: Exécuter les parcours navigateur
+        run: npm run test:e2e
+      - name: Compiler la version de production
+        run: npm run build

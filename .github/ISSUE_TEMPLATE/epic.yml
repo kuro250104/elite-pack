@@ -1,0 +1,33 @@
+name: EPIC
+description: Définir un objectif regroupant plusieurs fonctionnalités.
+title: "[EPIC] "
+labels: ["type:epic"]
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objectif
+      description: Décrire la valeur attendue pour les joueurs ou les administrateurs.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Domaine
+      options: [Frontend, Backend, Transverse]
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Périmètre et critères de réussite
+      description: Lister les résultats observables qui permettront de clôturer cet EPIC.
+    validations:
+      required: true
+  - type: textarea
+    id: children
+    attributes:
+      label: Fonctionnalités enfants
+      description: Ajouter les liens des issues enfants puis les rattacher avec les sous-issues natives GitHub.
+    validations:
+      required: true
