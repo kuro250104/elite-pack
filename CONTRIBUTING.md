@@ -9,14 +9,14 @@ Prérequis : Node.js 22.12 ou supérieur, npm et Docker avec Compose. Les versio
 ```sh
 npm ci
 cp .env.example .env
-# Renseigner AUTH_SECRET et les identifiants OAuth dans .env.
+# Renseigner le mot de passe PostgreSQL local et AUTH_SECRET. OAuth est facultatif.
 docker compose -p elite-pack-foundation up -d
 npm run db:deploy
 npm run db:seed
 npm run dev
 ```
 
-Générer `AUTH_SECRET` avec `openssl rand -base64 32`. Déclarer dans l’application OAuth GitHub le callback `http://localhost:3000/api/auth/callback/github`. Renseigner `THESPORTSDB_API_KEY` pour les imports réels. Ne pas committer `.env` ni les secrets. Les identifiants PostgreSQL de `.env.example` servent exclusivement au développement local. Le seed ne crée pas d’administrateur ; le rôle doit être attribué par un opérateur de confiance.
+Générer `AUTH_SECRET` avec `openssl rand -base64 32`. La connexion locale par e-mail et mot de passe ne nécessite pas GitHub. Pour activer l’option GitHub, déclarer dans l’application OAuth le callback `http://localhost:3000/api/auth/callback/github`. Renseigner `THESPORTSDB_API_KEY` pour les imports réels. Ne pas committer `.env` ni les secrets. Les identifiants PostgreSQL de `.env.example` servent exclusivement au développement local. Le seed ne crée pas d’administrateur ; le rôle doit être attribué par un opérateur de confiance.
 
 Les commandes reproductibles et limites de l’authentification sont détaillées dans [README.md](README.md). Les tests PostgreSQL nécessitent une base de test migrée et `TEST_DATABASE_URL` explicite.
 

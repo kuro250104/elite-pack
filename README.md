@@ -18,15 +18,16 @@ Node.js 22.12+ (branche LTS conseillée), npm et Docker.
 npm ci
 cp .env.example .env
 # Remplacer CHANGE_ME_LOCAL_PASSWORD dans POSTGRES_PASSWORD et DATABASE_URL.
-# Renseigner AUTH_SECRET (openssl rand -base64 32), puis les identifiants OAuth.
+# Renseigner AUTH_SECRET (openssl rand -base64 32). Les identifiants OAuth sont facultatifs.
 docker compose -p elite-pack-foundation up -d
 npm run db:deploy
 npm run db:seed
 npm run dev
 ```
 
-Dans GitHub OAuth Apps, déclarer le callback `http://localhost:3000/api/auth/callback/github`. Le premier accès crée atomiquement le compte, le portefeuille avec journal initial et le stock passif à zéro. La configuration initiale doit être seedée avant la première connexion. Les sessions sont persistées dans PostgreSQL ; Auth.js gère les cookies HTTP-only, HTTPS en production et les protections CSRF de ses actions. L’application désactive le fournisseur tant que ses identifiants manquent. Aucun mot de passe local n’est accepté. Le rôle ADMIN doit être attribué par un opérateur de confiance, jamais depuis le navigateur.
+La connexion locale fonctionne par e-mail et mot de passe dans `/inscription` et `/connexion`, sans GitHub. Le premier compte crée atomiquement le joueur, son portefeuille, le journal initial et le stock passif à zéro. La configuration initiale doit être seedée avant la première inscription. Les mots de passe sont hachés avec scrypt ; les sessions Auth.js utilisent un cookie JWT HTTP-only. Le rôle ADMIN reste contrôlé dans PostgreSQL et ne peut jamais être demandé par le navigateur. Voir [la connexion locale et l’accès administrateur](docs/authentication.md).
 
+GitHub est facultatif : si vous l’activez, déclarer le callback `http://localhost:3000/api/auth/callback/github` dans son application OAuth.
 Auth.js v5 utilise actuellement la version `5.0.0-beta.32` : choix nécessaire à cette intégration App Router, à revalider avant mise en production. Next.js et Prisma sont verrouillés dans `package-lock.json`.
 
 Le compose écoute uniquement sur localhost. Ses identifiants sont destinés au développement. En production, fournir PostgreSQL managé, URL de connexion et secrets via l’environnement. Ne jamais utiliser ces identifiants en production.
@@ -65,7 +66,7 @@ Consulter [l’architecture](docs/architecture.md), [la base](docs/database.md),
 
 ## Limites et prochaine étape
 
-Le login OAuth réel nécessite des identifiants et n’est pas simulé par les tests. Le parcours administrateur crée une session PostgreSQL de test pour vérifier les pages et API protégées. Les données de test sont retirées de façon ciblée; aucun reset n’est effectué. Playwright utilise son propre serveur sur le port 3100 et `.next-e2e`, sans réutiliser un serveur ouvert. `PLAYWRIGHT_PORT` permet de changer son port.
+Le login OAuth réel reste facultatif et nécessite ses identifiants. Le parcours administrateur utilise un cookie JWT de test signé et vérifie les rôles PostgreSQL réels. Le parcours de connexion locale utilise l’inscription et la connexion réelles, sans simuler le fournisseur Credentials. Les données de test sont retirées de façon ciblée; aucun reset n’est effectué. Playwright utilise son propre serveur sur le port 3100 et `.next-e2e`, sans réutiliser un serveur ouvert. `PLAYWRIGHT_PORT` permet de changer son port.
 
 Les imports TheSportsDB sont disponibles dans `/admin/imports` après configuration de la clé API et du rôle ADMIN. Recherche par nom, import du catalogue et import d’un athlète par identifiant sont disponibles. Les corrections restent prioritaires aux réimports et les identités ambiguës nécessitent une liaison explicite. Voir [le guide d’import](docs/imports.md).
 

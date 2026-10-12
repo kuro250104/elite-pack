@@ -1,3 +1,4 @@
+import {sessionCookie} from "./auth-session";
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -11,9 +12,8 @@ test("administration réelle : autorisations, corrections et mobile", async ({pa
   const user = await prisma.user.create({data: {role: "ADMIN", name: "Admin de test"}});
   const sport = await prisma.sport.create({data: {slug: `e2e-${token}`, nameFr: `Sport test ${token}`, providerName: `Source ${token}`}});
   const athlete = await prisma.athlete.create({data: {name: `Athlète ${token}`, sportId: sport.id, nationality: "France"}});
-  await prisma.session.create({data: {userId: user.id, sessionToken: token, expires: new Date(Date.now() + 600_000)}});
   try {
-    await page.context().addCookies([{name: "authjs.session-token", value: token, url: baseURL!, httpOnly: true, sameSite: "Lax"}]);
+    await page.context().addCookies([await sessionCookie(user.id,baseURL!)]);
     await page.goto("/admin/imports");
     await expect(page.getByRole("heading", {name: "Imports et catalogue sportif"})).toBeVisible();
     const article = page.locator("#sports article").filter({hasText: sport.nameFr});

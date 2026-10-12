@@ -1,3 +1,11 @@
+## Connexion locale — 12 octobre 2026
+
+77 tests unitaires, 47 tests PostgreSQL et sept parcours Playwright réussis, lint et TypeScript strict réussis, build de production réussi. Inscription, mot de passe erroné, connexion réelle sans GitHub, cookie HTTP-only, mise à jour de session avec faux rôle ignorée et déconnexion effective ont été vérifiés. Les tests administratifs utilisent des JWT de test signés et relisent les rôles réels.
+
+Migration additive `20261012150000_credentials_auth` appliquée localement, sans suppression des comptes ou sessions historiques. Scrypt natif, quotas partagés et création atomique du joueur vérifiés. Aucun compte personnel n’a été créé automatiquement ni promu administrateur. La vérification d’adresse et la récupération de mot de passe restent à développer. Voir [authentication.md](authentication.md).
+
+La [CI des imports et images](https://github.com/kuro250104/elite-pack/actions/runs/38193421227) a également réussi sur `61d1b81` : 71 unités, 40 PostgreSQL, six parcours, lint/types/build. La CI de la connexion locale sera vérifiée séparément avant de la déclarer réussie.
+
 ## Imports réels et revue des images — 12 octobre 2026
 
 71 tests unitaires, 40 tests PostgreSQL et six parcours Playwright exécutés avec succès, lint et TypeScript strict réussis, build de production réussi. Les parcours images utilisent une fixture synthétique interceptée : aucune photo externe non validée n’est chargée. L’absence de débordement mobile a été vérifiée et une capture a été inspectée.
