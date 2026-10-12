@@ -1,3 +1,11 @@
+## Imports réels et revue des images — 12 octobre 2026
+
+71 tests unitaires, 40 tests PostgreSQL et six parcours Playwright exécutés avec succès, lint et TypeScript strict réussis, build de production réussi. Les parcours images utilisent une fixture synthétique interceptée : aucune photo externe non validée n’est chargée. L’absence de débordement mobile a été vérifiée et une capture a été inspectée.
+
+Migration additive `20261012130000_image_review` appliquée localement, sans reset ; Prisma régénéré. Import réel de deux sports, de Mbappé et Hamilton avec la clé publique de développement ; rejouer le job de Mbappé renvoie `replay=true`. Métadonnées Commons de Hamilton enregistrées non approuvées. Aucun droit d’image réel n’est approuvé automatiquement.
+
+Configuration locale `.env` créée, ignorée par Git, permissions 0600, secret Auth.js généré sans sortie des valeurs. Une clé personnelle reste nécessaire pour le mode de production. Le build bloque l’utilisation de la clé publique. La connexion OAuth réelle n’est pas configurée ; la demande de connexion locale par e-mail/mot de passe est traitée séparément.
+
 # Vérifications du socle — 9 octobre 2026
 
 ## Imports administratifs et préparation du TD POC

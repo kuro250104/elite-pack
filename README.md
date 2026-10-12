@@ -69,7 +69,7 @@ Le login OAuth réel nécessite des identifiants et n’est pas simulé par les 
 
 Les imports TheSportsDB sont disponibles dans `/admin/imports` après configuration de la clé API et du rôle ADMIN. Recherche par nom, import du catalogue et import d’un athlète par identifiant sont disponibles. Les corrections restent prioritaires aux réimports et les identités ambiguës nécessitent une liaison explicite. Voir [le guide d’import](docs/imports.md).
 
-La génération passive, les achats et l’ouverture sont uniquement modélisés : leurs transactions et tests de concurrence seront implémentés lors de la phase cartes/boosters. Les montants utilisent des entiers PostgreSQL `BIGINT`, à sérialiser en chaînes décimales dans les API. Les images sportives restent masquées jusqu’à validation de leurs droits. Aucun catalogue complet n’est codé en dur.
+La génération passive, les achats et l’ouverture sont uniquement modélisés : leurs transactions et tests de concurrence seront implémentés lors de la phase cartes/boosters. Les montants utilisent des entiers PostgreSQL `BIGINT`, à sérialiser en chaînes décimales dans les API. Les images sportives restent masquées jusqu’à validation documentée dans `/admin/images`. Voir [les droits des images](docs/images-rights.md) et [le dossier Commons de démonstration](docs/image-review-example.md). Aucun catalogue complet n’est codé en dur.
 
 Avant publication, limiter aussi les routes OAuth à la passerelle d’hébergement. L’audit des dépendances et les vérifications sont détaillés dans [docs/verification.md](docs/verification.md).
 
