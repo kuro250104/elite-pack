@@ -84,6 +84,7 @@ model User {
   openings         BoosterOpening[]
   auditLogs        AdminAuditLog[]
   importJobs       ImportJob[]
+  reviewedImages   AthleteImage[]
 }
 
 model Account {
@@ -179,17 +180,23 @@ model AthleteExternalId {
 }
 
 model AthleteImage {
-  id                 String  @id @default(cuid())
-  athleteId          String  @unique
+  id                 String    @id @default(cuid())
+  athleteId          String    @unique
   url                String
   originalUrl        String
   source             String
   license            String?
   licenseUrl         String?
   attribution        String?
-  usageRestrictions  String? @db.Text
-  approvedForDisplay Boolean @default(false)
-  athlete            Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  usageRestrictions  String?   @db.Text
+  approvedForDisplay Boolean   @default(false)
+  evidenceUrl        String?
+  decisionReason     String?   @db.Text
+  reviewedById       String?
+  reviewedAt         DateTime? @db.Timestamptz(3)
+  version            Int       @default(0)
+  reviewedBy         User?     @relation(fields: [reviewedById], references: [id], onDelete: Restrict)
+  athlete            Athlete   @relation(fields: [athleteId], references: [id], onDelete: Cascade)
 }
 
 model CardEdition {

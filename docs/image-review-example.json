@@ -1,0 +1,39 @@
+{
+  "athlete": {
+    "name": "Lewis Hamilton",
+    "provider": "THESPORTSDB",
+    "externalId": "34157136"
+  },
+  "image": {
+    "source": "Wikimedia Commons",
+    "fileTitle": "File:Lewis Hamilton during the 2025 Belgian Grand Prix weekend.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/f/ff/Lewis_Hamilton_during_the_2025_Belgian_Grand_Prix_weekend.jpg",
+    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/f/ff/Lewis_Hamilton_during_the_2025_Belgian_Grand_Prix_weekend.jpg",
+    "author": "Skyebble",
+    "authorUrl": "https://commons.wikimedia.org/wiki/User:Skyebble",
+    "license": "CC-BY-4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "Lewis Hamilton during the 2025 Belgian Grand Prix weekend — Skyebble, Wikimedia Commons, CC BY 4.0. Source et licence liées ; aucune modification déclarée à ce stade.",
+    "usageRestrictions": "Attribution, lien vers la source et la licence, indication de toute modification. Les droits de la personne représentée et des marques restent à examiner. L’absence de restriction dans les métadonnées Commons ne constitue pas une autorisation générale.",
+    "approvedForDisplay": false
+  },
+  "evidence": {
+    "checkedOn": "2026-10-12",
+    "method": "Wikimedia Commons Action API : query imageinfo extmetadata et revisions ; aucun téléchargement du fichier image",
+    "apiUrl": "https://commons.wikimedia.org/w/api.php?action=query&format=json&prop=imageinfo%7Crevisions&titles=File%3ALewis+Hamilton+during+the+2025+Belgian+Grand+Prix+weekend.jpg&iiprop=url%7Cextmetadata%7Ctimestamp%7Csha1&rvprop=ids%7Ctimestamp",
+    "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Lewis_Hamilton_during_the_2025_Belgian_Grand_Prix_weekend.jpg",
+    "pageId": 190460153,
+    "revisionId": 1259725609,
+    "revisionUrl": "https://commons.wikimedia.org/w/index.php?title=File%3ALewis_Hamilton_during_the_2025_Belgian_Grand_Prix_weekend.jpg&oldid=1259725609",
+    "revisionTimestamp": "2026-08-11T12:07:02Z",
+    "uploadTimestamp": "2026-04-26T16:41:25Z",
+    "sha1": "529f1c66e127913d4256253fcd18452fcd62e069",
+    "licenseShortName": "CC BY 4.0",
+    "licenseCode": "cc-by-4.0",
+    "attributionRequired": true,
+    "credit": "Own work",
+    "restrictionsField": "",
+    "visualInspectionCompleted": false,
+    "rightsReviewCompleted": false
+  }
+}

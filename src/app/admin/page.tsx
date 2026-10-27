@@ -7,6 +7,6 @@ export default async function AdminPage() {
     <Link href="/dashboard" className="text-sm text-primary hover:underline">Retour au tableau de bord</Link>
     <h1 className="text-3xl font-bold">Administration</h1>
     <p className="max-w-2xl text-muted-foreground">Préparez le catalogue multisport et vérifiez les identités importées depuis TheSportsDB.</p>
-    <Button asChild><Link href="/admin/imports">Gérer les imports et le catalogue</Link></Button>
+    <div className="flex flex-wrap gap-3"><Button asChild><Link href="/admin/imports">Gérer les imports et le catalogue</Link></Button><Button asChild variant="outline"><Link href="/admin/images">Vérifier les droits des images</Link></Button></div>
   </main>;
 }
