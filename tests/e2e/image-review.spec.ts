@@ -1,3 +1,4 @@
+import {sessionCookie} from "./auth-session";
 import {randomUUID} from "node:crypto";
 import {expect,test} from "@playwright/test";
 import {PrismaPg} from "@prisma/adapter-pg";
@@ -11,12 +12,11 @@ test("droits des images : refus par défaut, revue administrative et révocation
   const sport=await prisma.sport.create({data:{slug:`image-e2e-${token}`,nameFr:"Sport de test",providerName:`Source ${token}`}});
   const athlete=await prisma.athlete.create({data:{name:`Portrait de test ${token}`,sportId:sport.id}});
   const image=await prisma.athleteImage.create({data:{athleteId:athlete.id,url:"https://upload.wikimedia.org/wikipedia/commons/a/a0/Fixture_de_test.jpg",originalUrl:"https://commons.wikimedia.org/wiki/File:Fixture_de_test.jpg",source:"Fixture de test"}});
-  await prisma.session.create({data:{userId:user.id,sessionToken:token,expires:new Date(Date.now()+600_000)}});
   let imageRequests=0;
   // Fixture synthétique : aucune photo ni requête réelle vers Wikimedia pendant les tests.
   await page.route("https://upload.wikimedia.org/**",async route=>{imageRequests++;await route.fulfill({contentType:"image/svg+xml",body:'<svg xmlns="http://www.w3.org/2000/svg" width="480" height="600"><rect width="480" height="600" fill="#263342"/></svg>'});});
   try{
-    await page.context().addCookies([{name:"authjs.session-token",value:token,url:baseURL!,httpOnly:true,sameSite:"Lax"}]);
+    await page.context().addCookies([await sessionCookie(user.id,baseURL!)]);
     await page.goto(`/admin/images?query=${token}`);
     const card=page.locator("article").filter({hasText:athlete.name});
     await expect(card.getByText("Affichage non autorisé",{exact:true})).toBeVisible();
