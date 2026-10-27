@@ -4,11 +4,11 @@ Les fichiers du dépôt préparent les automatisations suivantes. Leur exécutio
 
 ## Vérifications automatiques
 
-`.github/workflows/ci.yml` s’exécute sur les PR, les push vers `main` et à la demande. Node.js 22 utilise le lockfile avec `npm ci`. Les étapes couvrent génération et validation Prisma, ESLint, TypeScript, Vitest, migrations, seed, tests PostgreSQL, Playwright Chromium et compilation Next.js.
+`.github/workflows/ci.yml` s’exécute sur les PR, les push vers `main` et `dev` et à la demande. Node.js 22 utilise le lockfile avec `npm ci`. Les étapes couvrent génération et validation Prisma, ESLint, TypeScript, Vitest, migrations, seed, tests PostgreSQL, Playwright Chromium et compilation Next.js.
 
 PostgreSQL 17 est un service éphémère du job. Les identifiants présents dans le YAML et `AUTH_SECRET` sont exclusivement des valeurs publiques de test. Aucun secret de production, jeton OAuth ni clé TheSportsDB n’est fourni aux PR. Les tests fournisseurs utilisent leurs fixtures. La CI possède uniquement `contents: read`, ne conserve pas les credentials Git et annule une ancienne exécution de la même branche lorsqu’une nouvelle arrive. Aucun déploiement n’est automatique.
 
-Le nom du job à rendre obligatoire dans les règles de branche est **Lint, types, tests et compilation**. Cette règle reste à activer après création du dépôt ; sa présence dans le YAML ne protège pas automatiquement `main`.
+Le job **Lint, types, tests et compilation** est obligatoire dans les rulesets de `main` et `dev`. `.github/workflows/branch-policy.yml` ajoute le contrôle **Origine de la PR vers main**, obligatoire sur `main` : il refuse toute PR vers `main` qui ne provient pas de `dev` ou d’une branche `hotfix/*`. Ces contrôles ne protègent les branches que parce que les rulesets distants les exigent.
 
 ## Triage et mises à jour
 
@@ -16,7 +16,7 @@ Le nom du job à rendre obligatoire dans les règles de branche est **Lint, type
 
 Le triage intervient à l’ouverture uniquement : une modification ultérieure du domaine exige une mise à jour manuelle du label. Les labels `type:epic`, `type:feature` et `type:bug` doivent être créés lors de l’initialisation du dépôt pour être appliqués par les formulaires.
 
-Dependabot propose chaque lundi à 08:00, heure de Paris, les mises à jour npm et GitHub Actions. Les versions npm mineures et correctives sont regroupées ; les versions majeures npm restent séparées pour faciliter la revue. Ces PR doivent passer la CI et une revue humaine. Aucune fusion automatique n’est configurée.
+Dependabot propose chaque lundi à 08:00, heure de Paris, les mises à jour npm et GitHub Actions, en PR vers `dev`. Les versions npm mineures et correctives sont regroupées ; les versions majeures npm restent séparées pour faciliter la revue. Ces PR doivent passer la CI et une revue humaine. Aucune fusion automatique n’est configurée.
 
 ## Tableau Projects et liens parents-enfants
 
