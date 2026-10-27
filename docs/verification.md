@@ -1,12 +1,24 @@
 # Vérifications du socle — 9 octobre 2026
 
+## Publication et vérification distante
+
+Le [dépôt public kuro250104/elite-pack](https://github.com/kuro250104/elite-pack) est publié sur `main` au commit `38c93b4`. L’[exécution GitHub Actions nº 37938740829](https://github.com/kuro250104/elite-pack/actions/runs/37938740829) a réussi sous Node.js 22 : lint, TypeScript strict, **44 tests unitaires, 32 tests PostgreSQL, cinq parcours Playwright et build Next.js**.
+
+Le [Project public nº 4](https://github.com/users/kuro250104/projects/4) contient les quatre EPICs et seize enfants natifs, issues nº 1 à 20. Status comporte cinq valeurs ordonnées; Priority propose P1/P2/P3; Estimation totalise 81 points sur les enfants. Les vues EPICs/table, Kanban/board groupé par Status et trié par Priority, et backlog/table ont été configurées avec leurs filtres et champs visibles.
+
+La reprise réelle de l’importeur a produit **0 issue créée, 20 réutilisées**. Les enums GraphQL des dispositions ont été corrigés vers `BOARD_LAYOUT` et `TABLE_LAYOUT` puis validés sur l’API réelle. Vingt exécutions Actions de triage ont réussi. Huit workflows natifs Projects sont activés. L’issue [nº 24](https://github.com/kuro250104/elite-pack/issues/24) a démontré l’ajout automatique en Backlog puis la clôture vers Done; la réouverture vers Ready a ensuite été confirmée par lecture de l’API. La démonstration est finalement clôturée ; sa trace est conservée.
+
+Le contrôle des 121 fichiers distants a confirmé l’absence de `.env`, `node_modules`, `.next` et `.next-e2e`. L’historique publié contient un commit assaini, `38c93b4`.
+
+Rulesets *Protection main*, *Protection dev* et *Protection des tags de version* actifs le 27 octobre 2026 (voir [workflow](workflow.md#branches-et-protections)) ; le refus d’une PR vers `main` hors `dev`/`hotfix/*` reste à démontrer. La feuille Google de rendu n’est pas éditée, faute de nom ou numéro de groupe permettant d’identifier sa ligne. Aucune conformité complète du rendu n’est revendiquée. Les preuves et limites sont détaillées dans [poc-preuves.md](poc-preuves.md) et [poc-conformite.md](poc-conformite.md).
+
 ## Imports administratifs et préparation du TD POC
 
 Dernière vérification locale : lint, TypeScript strict et 44 tests unitaires réussis, dont sept tests de l’importeur GitHub Projects (mode aperçu sans réseau, reprise et relations parent/enfant).
 
 Les vérifications de la phase imports ont également été exécutées : 32 tests sur PostgreSQL réel, cinq parcours Playwright Chromium (dont administration, autorisations et mobile) et compilation Next.js de production. La migration additive `20261009153000_import_security` a été appliquée ; le schéma et la base sont synchronisés. Aucun import réel d’athlètes n’a été lancé.
 
-L’aperçu du backlog valide quatre EPICs, seize sous-tâches et 81 points. Les sept fichiers YAML GitHub ont été analysés. Les actions CI et le Project distant ne sont pas encore vérifiés sur GitHub : les fichiers locaux ne prouvent pas leur activation. La connexion OAuth complète et l’exécution CI sous Node 22 restent à vérifier.
+L’aperçu du backlog valide quatre EPICs, seize sous-tâches et 81 points. Les sept fichiers YAML GitHub ont été analysés. La CI distante sous Node.js 22 et le Project sont désormais vérifiés comme indiqué ci-dessus. La connexion OAuth complète de l’application reste à vérifier avec les identifiants du fournisseur; la connexion du plugin GitHub de Codex est distincte.
 
 ## Vérification initiale
 

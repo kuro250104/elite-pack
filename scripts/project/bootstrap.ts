@@ -158,7 +158,7 @@ export async function runBootstrap(backlog: Backlog, options: Options, transport
   const viewData = await graphql(transport, "query($id:ID!){node(id:$id){... on ProjectV2{views(first:100){nodes{name} pageInfo{hasNextPage}}}}}", { id: options.projectId });
   const views = z.object({ views: z.object({ nodes: z.array(z.object({ name: z.string() })), pageInfo: z.object({ hasNextPage: z.boolean() }) }) }).parse(viewData.node).views;
   if (views.pageInfo.hasNextPage) throw new Error("Projet avec plus de 100 vues : vérifier les vues manuellement avant création.");
-  for (const [name, layout] of [["Kanban Elite Pack", "BOARD"], ["Backlog Elite Pack", "TABLE"]]) if (!views.nodes.some(view => view.name === name)) await graphql(transport, "mutation($projectId:ID!,$name:String!,$layout:ProjectV2ViewLayout!){createProjectV2View(input:{projectId:$projectId,name:$name,layout:$layout}){clientMutationId}}", { projectId: options.projectId, name, layout });
+  for (const [name, layout] of [["Kanban Elite Pack", "BOARD_LAYOUT"], ["Backlog Elite Pack", "TABLE_LAYOUT"]]) if (!views.nodes.some(view => view.name === name)) await graphql(transport, "mutation($projectId:ID!,$name:String!,$layout:ProjectV2ViewLayout!){createProjectV2View(input:{projectId:$projectId,name:$name,layout:$layout}){clientMutationId}}", { projectId: options.projectId, name, layout });
   return `${created} issues créées, ${plan.length - created} réutilisées. Hiérarchie et éléments du projet vérifiés. Vues présentes. Terminez les champs et workflows selon docs/github-projects.md.`;
 }
 
