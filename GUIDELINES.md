@@ -26,11 +26,11 @@ Une migration doit être versionnée, relue et explicitée dans la PR. Préfére
 
 ## Branches, commits et versions
 
-Suivre [GitHub Flow et le workflow des tickets](docs/workflow.md). Une branche courte concerne un ticket ou un changement cohérent ; ne pas mélanger une fonctionnalité et une refonte indépendante. `main` doit rester vérifiable.
+Suivre [le flux `dev` / `main` et le workflow des tickets](docs/workflow.md#branches-et-protections). Une branche courte issue de `dev` concerne un ticket ou un changement cohérent ; ne pas mélanger une fonctionnalité et une refonte indépendante. `dev` et `main` doivent rester vérifiables ; aucun push direct n’y est accepté.
 
 La version initiale est `0.1.0`. Suivre SemVer pendant le POC : `0.MINOR.PATCH`. Incrémenter `PATCH` pour une correction compatible, `MINOR` pour une nouvelle capacité ou une rupture documentée tant que l’API est expérimentale. La version `1.0.0` sera réservée à un contrat stable explicitement accepté par l’équipe. Toute rupture doit figurer dans les notes de release, même avant `1.0.0`.
 
-Une release suit une PR dédiée mettant à jour `package.json` et le lockfile, puis une validation sur `main`. Le tag annoté est `vX.Y.Z`. Configurer un ruleset GitHub protégeant les tags `v*` contre modification/suppression et création non autorisée. Créer la release seulement après vérification de la version, du commit et des contrôles ; la CI ne publie pas automatiquement les releases, paquets ou sites.
+Une release suit une PR dédiée mettant à jour `package.json` et le lockfile, puis une promotion `dev` → `main` validée. Le tag annoté est `vX.Y.Z`. Configurer un ruleset GitHub protégeant les tags `v*` contre modification/suppression et création non autorisée. Créer la release seulement après vérification de la version, du commit et des contrôles ; la CI ne publie pas automatiquement les releases, paquets ou sites.
 
 ## Revue
 
