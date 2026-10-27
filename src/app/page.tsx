@@ -23,14 +23,14 @@ export default function Home() {
       </header>
       <main id="contenu" className="py-16 sm:py-24">
         <section aria-labelledby="titre-accueil" className="max-w-3xl">
-          <Badge variant="outline" className="mb-6 text-muted-foreground">Le jeu est en préparation</Badge>
+          <Badge variant="outline" className="mb-6 text-muted-foreground">Première version jouable</Badge>
           <p className="mb-4 text-xs font-semibold tracking-[0.2em] text-primary uppercase">Le sport à collectionner</p>
-          <h1 id="titre-accueil" className="text-4xl leading-[1.12] font-bold tracking-tight sm:text-6xl">Une passion.<br />Des milliers de cartes.</h1>
+          <h1 id="titre-accueil" className="text-4xl leading-[1.12] font-bold tracking-tight sm:text-6xl">Vos athlètes.<br />Votre collection.</h1>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">Collectionnez les athlètes qui vous inspirent. Découvrez leurs éditions, composez votre collection et partagez votre passion du sport.</p>
-          <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">Les fondations sont en cours de développement. L’ouverture des boosters et le marché seront disponibles lors d’une prochaine étape.</p>
+          <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">Ouvrez votre booster de bienvenue, choisissez entre football et sports automobiles, puis découvrez les éditions de Kylian Mbappé et Lewis Hamilton. Un booster gratuit se génère toutes les 15 minutes.</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg"><Link href="/inscription">Créer mon compte <ArrowRight aria-hidden="true" /></Link></Button>
-            <Button asChild variant="ghost" size="lg"><a href="#principes">Découvrir le projet</a></Button>
+            <Button asChild variant="outline" size="lg"><Link href="/boosters">Jouer maintenant</Link></Button><Button asChild variant="ghost" size="lg"><a href="#principes">Découvrir les règles</a></Button>
           </div>
         </section>
         <section id="principes" aria-labelledby="titre-principes" className="mt-20 sm:mt-28">
