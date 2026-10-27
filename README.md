@@ -77,7 +77,7 @@ Prochaine étape : publier le socle et valider le GitHub Project, ses relations 
 
 ## Travailler en équipe
 
-Lire [CONTRIBUTING.md](CONTRIBUTING.md) pour le démarrage et les PR, [GUIDELINES.md](GUIDELINES.md) pour les conventions et SemVer, puis [le workflow des tickets](docs/workflow.md) pour les statuts et critères DoR/DoD. La stratégie est GitHub Flow : `main`, branches courtes par ticket et revue obligatoire; les versions commencent à `0.1.0`.
+Lire [CONTRIBUTING.md](CONTRIBUTING.md) pour le démarrage et les PR, [GUIDELINES.md](GUIDELINES.md) pour les conventions et SemVer, puis [le workflow des tickets](docs/workflow.md) pour les statuts et critères DoR/DoD. Les branches de fonctionnalité partent de `dev` (intégration) et `dev` est promue vers `main` (stable) par PR, les deux étant protégées; les versions commencent à `0.1.0`.
 
 Les [automatisations préparées](docs/automations.md) comprennent CI, triage des issues et Dependabot. Leur activation réelle nécessite les fichiers publiés dans le dépôt; les workflows natifs du Project doivent être configurés et démontrés séparément. Les liens du dépôt et du suivi doivent être reportés dans la feuille demandée par le TD après vérification des accès.
 
