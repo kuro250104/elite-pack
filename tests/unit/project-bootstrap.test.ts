@@ -19,7 +19,11 @@ function fakeGitHub() {
       const query = String(body?.query);
       const variables = body?.variables as Record<string, unknown>;
       if (query.includes("addProjectV2ItemById")) { contents.add(String(variables.contentId)); return { data: { addProjectV2ItemById: { item: { id: "item" } } } }; }
-      if (query.includes("createProjectV2View")) { views.push({ name: String(variables.name) }); return { data: { createProjectV2View: { clientMutationId: null } } }; }
+      if (query.includes("createProjectV2View")) {
+        // Valeurs réellement acceptées par le schéma GraphQL GitHub.
+        if (!["BOARD_LAYOUT", "TABLE_LAYOUT"].includes(String(variables.layout))) return { errors: [{ message: "Invalid ProjectV2ViewLayout" }] };
+        views.push({ name: String(variables.name) }); return { data: { createProjectV2View: { clientMutationId: null } } };
+      }
       if (query.includes("items(first")) return { data: { node: { items: { nodes: [...contents].map(id => ({ content: { id } })), pageInfo: { hasNextPage: false, endCursor: null } } } } };
       if (query.includes("views(first")) return { data: { node: { views: { nodes: views, pageInfo: { hasNextPage: false } } } } };
       return { data: { node: { id: "PVT_test", owner: { login: "kuro250104" } } } };

@@ -1541,7 +1541,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 Les exigences du TD POC complètent ce document : consulter `docs/poc-conformite.md`, `CONTRIBUTING.md`, `GUIDELINES.md` et `docs/workflow.md` avant toute nouvelle phase.
 
 - Conserver un README développeur expliquant contexte, fonctionnalité principale, installation et limites réelles du POC.
-- Suivre GitHub Flow et SemVer; relier chaque branche/PR à un ticket.
+- Suivre le flux `feat/*` → `dev` → `main` (voir `docs/workflow.md`) et SemVer; relier chaque branche/PR à un ticket.
 - Utiliser GitHub Projects avec relations natives parent/sous-issue, au moins quatre EPICs et enfants frontend/backend pour chacun.
 - Maintenir labels, priorités, estimations, board et cycle de vie des tickets avec DoR/DoD.
 - Vérifier les automatisations réellement actives; ne jamais confondre un fichier local et une configuration distante.
