@@ -3,6 +3,11 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { ApiError } from "./errors";
 
+export async function requireApiUser() {
+  const session = await auth();
+  if (!session?.user?.id) throw new ApiError("UNAUTHENTICATED", "Veuillez vous connecter.", 401);
+  return session.user;
+}
 export async function requireApiAdmin() {
   const session = await auth();
   if (!session?.user?.id) throw new ApiError("UNAUTHENTICATED", "Veuillez vous connecter.", 401);
