@@ -4,9 +4,30 @@
 
 Utiliser GitHub Issues et GitHub Projects pour réunir tickets, pull requests, board et automatisations. Le dépôt cible est [kuro250104/elite-pack](https://github.com/kuro250104/elite-pack), fourni par l’utilisateur et vérifié vide. Le Project distant reste à configurer. Le plan local de tickets n’est pas un board utilisable.
 
-Le projet suit GitHub Flow, avec `main` et des branches courtes `feat/EP02-02-import-athlete`, `fix/EP04-01-stock`, `docs/EP01-03-installation`, `test/EP03-01-concurrency` ou `chore/EP01-03-ci`. Chaque branche part de `main` et une PR revient vers `main` après revue. Une branche `develop` permanente n’est pas utilisée. Une correction urgente suit le même parcours avec des vérifications adaptées.
+## Branches et protections
 
-Configurer la protection de `main` : PR obligatoire, au moins une approbation, contrôles CI obligatoires, conversations résolues, blocage des pushes forcés et suppressions. Les workflows présents dans le dépôt ne prouvent pas que ces règles sont activées sur GitHub ; vérifier le ruleset distant.
+Le projet utilise un flux à deux branches permanentes :
+
+| Branche | Rôle | Reçoit des PR depuis |
+| --- | --- | --- |
+| `main` | Version stable, seule source des tags `vX.Y.Z` | `dev` (promotion) ou `hotfix/*` |
+| `dev` | Intégration et tests ; branche par défaut du dépôt | branches de fonctionnalité |
+| `feat/`, `fix/`, `docs/`, `test/`, `chore/` | Un ticket, une branche courte issue de `dev` | — |
+| `hotfix/` | Correction urgente issue de `main` | — |
+
+Exemples : `feat/EP02-02-import-athlete`, `fix/EP04-01-stock`, `docs/EP01-03-installation`, `test/EP03-01-concurrency`, `chore/EP01-03-ci`.
+
+1. Une branche de fonctionnalité part de `dev` et revient vers `dev` par PR, fusionnée en squash une fois la CI verte. La branche est supprimée automatiquement après fusion.
+2. Lorsque `dev` est stable et vérifiée, une PR de promotion `dev` → `main` est ouverte et fusionnée par commit de fusion, afin de conserver l’historique commun des deux branches.
+3. Un `hotfix/*` part de `main`, revient vers `main`, puis `main` est refusionnée dans `dev`.
+
+Rulesets GitHub actifs (Settings → Rules → Rulesets) :
+
+- **Protection main** : PR obligatoire, conversations résolues, approbations invalidées par un nouveau push, contrôles obligatoires « Lint, types, tests et compilation » et « Origine de la PR vers main », pushes forcés et suppression interdits, aucun contournement.
+- **Protection dev** : PR obligatoire, conversations résolues, contrôle obligatoire « Lint, types, tests et compilation », pushes forcés et suppression interdits, aucun contournement.
+- **Protection des tags de version** : les tags `v*` ne peuvent être ni modifiés ni supprimés ; seule l’administration peut les créer.
+
+Le nombre d’approbations obligatoires est fixé à zéro tant que le dépôt n’a qu’un seul collaborateur, GitHub interdisant d’approuver sa propre PR. Il doit passer à une approbation dès qu’un second membre rejoint le dépôt. La présence des fichiers du dépôt ne prouve pas que ces règles sont activées ; vérifier les rulesets distants.
 
 ## Hiérarchie des tickets
 
@@ -51,7 +72,7 @@ Un ticket `Ready` comporte un problème clair, un résultat observable, ses crit
 
 ## Definition of Done — DoD
 
-Les critères d’acceptation sont vérifiés, le code est revu et fusionné sur `main`, les contrôles requis passent et leurs preuves sont liées à la PR. La documentation pertinente est à jour. Toute migration est relue et vérifiée sur une base de test ; les règles économiques nouvelles ont des tests d’intégration et de concurrence adaptés. Les textes sont français et les changements d’interface respectent accessibilité et responsive. Les limites restantes sont documentées dans un ticket distinct si elles ne font pas partie des critères.
+Les critères d’acceptation sont vérifiés, le code est revu et fusionné sur `dev`, les contrôles requis passent et leurs preuves sont liées à la PR. La documentation pertinente est à jour. Toute migration est relue et vérifiée sur une base de test ; les règles économiques nouvelles ont des tests d’intégration et de concurrence adaptés. Les textes sont français et les changements d’interface respectent accessibilité et responsive. Les limites restantes sont documentées dans un ticket distinct si elles ne font pas partie des critères.
 
 ## Automatisations à configurer et vérifier
 
@@ -61,13 +82,13 @@ L’ajout automatique ne reprend pas rétroactivement les éléments existants �
 
 Les automatisations natives doivent être contrôlées avec un ticket de démonstration : créer une issue, constater son arrivée et son statut dans le board, puis fermer/réouvrir cette issue et vérifier les transitions. Ne pas considérer une description de workflow ou un fichier JSON comme une automatisation active. Conserver les liens du ticket et du projet comme preuves.
 
-La CI exécute les contrôles de qualité configurés à chaque PR et sur `main`. GitHub conserve la trace des exécutions ; la présence du fichier YAML seule ne démontre pas une exécution réussie. Les automatismes de CI ne constituent pas, à eux seuls, l’automatisation du board demandée dans le TD.
+La CI exécute les contrôles de qualité configurés à chaque PR et à chaque push sur `main` et `dev`. GitHub conserve la trace des exécutions ; la présence du fichier YAML seule ne démontre pas une exécution réussie. Les automatismes de CI ne constituent pas, à eux seuls, l’automatisation du board demandée dans le TD.
 
 ## Versions et releases
 
 La version actuelle est `0.1.0`. Une correction compatible incrémente le patch ; une fonctionnalité ou rupture documentée incrémente le minor pendant le POC. À partir de `1.0.0`, une rupture de contrat incrémentera le major. Tenir un changelog avec ajouts, corrections, sécurité, migrations et ruptures.
 
-Pour publier une release : PR de version, contrôles requis, fusion, tag annoté `vX.Y.Z` sur le commit vérifié, puis release GitHub avec notes et liens des tickets. Configurer un ruleset pour protéger `v*`. La publication est une action explicite, sans automatisme de déploiement ou publication de paquet. Le dépôt est marqué `private: true` dans `package.json`.
+Pour publier une release : PR de version vers `dev`, promotion `dev` → `main`, contrôles requis, tag annoté `vX.Y.Z` sur le commit vérifié, puis release GitHub avec notes et liens des tickets. Configurer un ruleset pour protéger `v*`. La publication est une action explicite, sans automatisme de déploiement ou publication de paquet. Le dépôt est marqué `private: true` dans `package.json`.
 
 ## Rendu du TD
 

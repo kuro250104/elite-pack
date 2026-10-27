@@ -10,7 +10,7 @@ La reprise réelle de l’importeur a produit **0 issue créée, 20 réutilisée
 
 Le contrôle des 121 fichiers distants a confirmé l’absence de `.env`, `node_modules`, `.next` et `.next-e2e`. L’historique publié contient un commit assaini, `38c93b4`.
 
-La protection de `main` et des tags n’est ni configurée ni testée. La feuille Google de rendu n’est pas éditée, faute de nom ou numéro de groupe permettant d’identifier sa ligne. Aucune conformité complète du rendu n’est revendiquée. Les preuves et limites sont détaillées dans [poc-preuves.md](poc-preuves.md) et [poc-conformite.md](poc-conformite.md).
+Rulesets *Protection main*, *Protection dev* et *Protection des tags de version* actifs le 27 octobre 2026 (voir [workflow](workflow.md#branches-et-protections)) ; le refus d’une PR vers `main` hors `dev`/`hotfix/*` reste à démontrer. La feuille Google de rendu n’est pas éditée, faute de nom ou numéro de groupe permettant d’identifier sa ligne. Aucune conformité complète du rendu n’est revendiquée. Les preuves et limites sont détaillées dans [poc-preuves.md](poc-preuves.md) et [poc-conformite.md](poc-conformite.md).
 
 ## Imports administratifs et préparation du TD POC
 

@@ -4,13 +4,13 @@ Le [dépôt public](https://github.com/kuro250104/elite-pack) et le [Project nº
 
 ## Vérifications automatiques du code
 
-`.github/workflows/ci.yml` s’exécute sur les PR, les push vers `main` et à la demande. Node.js 22 installe le lockfile avec `npm ci`. Les étapes couvrent génération et validation Prisma, ESLint, TypeScript, Vitest, migrations, seed, tests PostgreSQL, Playwright Chromium et compilation Next.js.
+`.github/workflows/ci.yml` s’exécute sur les PR, les push vers `main` et `dev` et à la demande. Node.js 22 installe le lockfile avec `npm ci`. Les étapes couvrent génération et validation Prisma, ESLint, TypeScript, Vitest, migrations, seed, tests PostgreSQL, Playwright Chromium et compilation Next.js.
 
 L’[exécution nº 37938740829](https://github.com/kuro250104/elite-pack/actions/runs/37938740829) a réussi sur `main` au commit `38c93b4` : **44 tests unitaires, 32 tests PostgreSQL et cinq parcours E2E**, ainsi que lint, typage et build.
 
 PostgreSQL 17 est un service éphémère du job. Le secret Auth.js de test est généré pour l’exécution, masqué dans les logs et transmis par l’environnement. Aucune clé TheSportsDB ou OAuth de production n’est fournie aux PR. Les fournisseurs sont testés avec des fixtures. La CI possède `contents: read`, ne conserve pas les credentials Git et annule l’ancienne exécution d’une même branche. Aucun déploiement n’est automatique.
 
-Le job à rendre obligatoire dans les règles de branche est **Lint, types, tests et compilation**. La protection de `main` et des tags `v*` n’est **pas configurée ni testée**; une CI réussie ne l’active pas.
+Le job **Lint, types, tests et compilation** est obligatoire dans les rulesets de `main` et `dev`. `.github/workflows/branch-policy.yml` ajoute le contrôle **Origine de la PR vers main**, obligatoire sur `main` : il refuse toute PR vers `main` qui ne provient pas de `dev` ou d’une branche `hotfix/*`. Ces contrôles ne protègent les branches que parce que les rulesets distants les exigent.
 
 ## Triage des issues
 
@@ -18,7 +18,7 @@ Le job à rendre obligatoire dans les règles de branche est **Lint, types, test
 
 **Vingt exécutions distantes de triage ont réussi** lors de la création du backlog. Ce workflow ajoute des labels d’issue; les transitions du champ `Status` sont assurées par les workflows du Project. Modifier le domaine après ouverture nécessite de vérifier ou corriger le label.
 
-Dependabot est configuré pour proposer les mises à jour npm et GitHub Actions chaque lundi à 08:00, heure de Paris. Les versions mineures et correctives npm sont regroupées; les majeures restent séparées. Les PR nécessitent CI et revue humaine. Aucune fusion automatique n’est configurée et aucune exécution Dependabot n’est revendiquée dans cette vérification.
+Dependabot est configuré pour proposer les mises à jour npm et GitHub Actions chaque lundi à 08:00, heure de Paris, en PR vers `dev`. Les versions mineures et correctives npm sont regroupées; les majeures restent séparées. Les PR nécessitent CI et revue humaine. Aucune fusion automatique n’est configurée et aucune exécution Dependabot n’est revendiquée dans cette vérification.
 
 ## Workflows natifs Projects
 
@@ -41,7 +41,7 @@ Les quatre EPICs et seize enfants utilisent les relations natives parent/sous-is
 
 ## Vérifications restantes
 
-Terminer, si exigées pour le rendu, les démonstrations des événements PR et de la clôture depuis Done. Configurer et tester les protections de branches/tags. Inscrire les liens dans la feuille Google après identification de la ligne du groupe. Ces étapes ne sont pas considérées comme réalisées par les fichiers locaux.
+Terminer, si exigées pour le rendu, les démonstrations des événements PR et de la clôture depuis Done. Inscrire les liens dans la feuille Google après identification de la ligne du groupe. Ces étapes ne sont pas considérées comme réalisées par les fichiers locaux.
 
 ## Sources
 

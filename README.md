@@ -77,7 +77,7 @@ Prochaine étape : faire relire le socle et les preuves du POC, puis compléter 
 
 ## Travailler en équipe
 
-Lire [CONTRIBUTING.md](CONTRIBUTING.md) pour le démarrage et les PR, [GUIDELINES.md](GUIDELINES.md) pour les conventions et SemVer, puis [le workflow des tickets](docs/workflow.md) pour les statuts et critères DoR/DoD. La stratégie est GitHub Flow : `main`, branches courtes par ticket et revue obligatoire; les versions commencent à `0.1.0`.
+Lire [CONTRIBUTING.md](CONTRIBUTING.md) pour le démarrage et les PR, [GUIDELINES.md](GUIDELINES.md) pour les conventions et SemVer, puis [le workflow des tickets](docs/workflow.md) pour les statuts et critères DoR/DoD. Les branches de fonctionnalité partent de `dev` (intégration) et `dev` est promue vers `main` (stable) par PR, les deux étant protégées; les versions commencent à `0.1.0`.
 
 Les [automatisations](docs/automations.md) comprennent CI, triage des issues et Dependabot. La CI du socle et le triage ont réussi sur GitHub ; les transitions initiales, de clôture et de réouverture du Project ont été démontrées. Les liens du dépôt et du suivi restent à reporter dans la feuille demandée par le TD lorsque la ligne de destination sera identifiée.
 

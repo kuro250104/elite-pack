@@ -10,6 +10,6 @@
 
 ## Limites de rendu
 
-La protection distante de `main` et des tags n’est pas configurée. La connexion OAuth réelle du jeu et les imports réels de données sportives n’ont pas été exécutés. Les fonctionnalités économiques avancées restent au backlog.
+Rulesets *Protection main*, *Protection dev* et *Protection des tags de version* actifs le 27 octobre 2026 (voir [workflow](workflow.md#branches-et-protections)) ; le refus d’une PR vers `main` hors `dev`/`hotfix/*` reste à démontrer. La connexion OAuth réelle du jeu et les imports réels de données sportives n’ont pas été exécutés. Les fonctionnalités économiques avancées restent au backlog.
 
 La feuille du TD n’a pas été modifiée : aucun nom, numéro de groupe ou ligne de destination n’a été identifié. Les deux liens ci-dessus sont disponibles pour le rendu ; une ligne doit être identifiée avant toute écriture dans une feuille partagée.
