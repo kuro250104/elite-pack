@@ -22,7 +22,9 @@
     "db:seed": "prisma db seed",
     "postinstall": "prisma generate",
     "project:preview": "node --import tsx scripts/project/bootstrap.ts",
-    "project:apply": "node --import tsx scripts/project/bootstrap.ts --apply"
+    "project:apply": "node --import tsx scripts/project/bootstrap.ts --apply",
+    "imports:run": "node --conditions=react-server --import tsx scripts/imports/bootstrap.ts",
+    "admin:grant-local": "node --conditions=react-server --import tsx scripts/admin/grant-local.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",

@@ -1,12 +1,12 @@
 # Elite Pack — TCG multisport
 
-[Dépôt GitHub](https://github.com/kuro250104/elite-pack) · GitHub Projects : lien à renseigner après création et vérification.
+[Dépôt GitHub](https://github.com/kuro250104/elite-pack) · [GitHub Projects](https://github.com/users/kuro250104/projects/4) · [CI du socle](https://github.com/kuro250104/elite-pack/actions/runs/37938740829)
 
 Elite Pack est un jeu de cartes à collectionner multisport, gratuit et entièrement en français. Sa fonctionnalité principale visée est l’ouverture de boosters gratuits avec choix du sport, afin de collectionner plusieurs éditions d’athlètes réels. Les résultats, stocks et échanges seront garantis par le serveur.
 
 Ce **POC** prépare le travail d’équipe et le socle technique. Les comptes, sessions, modèles PostgreSQL et imports administratifs sont implémentés; l’ouverture, la frappe et le marché restent au backlog. Avant d’élargir le MVP, valider la documentation, le suivi hiérarchique, le board et les automatisations demandés par le TD.
 
-La conformité au sujet est suivie dans [la matrice du POC](docs/poc-conformite.md). Les [quatre EPICs et seize sous-tâches](docs/backlog.md) sont préparés pour GitHub Projects. Un fichier de préparation ne constitue pas un board distant déjà opérationnel.
+La conformité au sujet est suivie dans [la matrice du POC](docs/poc-conformite.md). Les [quatre EPICs et seize sous-tâches](docs/backlog.md) sont créés dans GitHub Projects avec leurs relations natives, priorités et estimations. Les [preuves de vérification](docs/poc-preuves.md) distinguent les résultats observés et les limites restantes.
 
 Socle Next.js App Router entièrement en français. Cette étape prépare les modèles, l’authentification et les frontières des services. Les imports administratifs sont disponibles; aucune ouverture, frappe ou vente n’est exposée.
 
@@ -18,15 +18,16 @@ Node.js 22.12+ (branche LTS conseillée), npm et Docker.
 npm ci
 cp .env.example .env
 # Remplacer CHANGE_ME_LOCAL_PASSWORD dans POSTGRES_PASSWORD et DATABASE_URL.
-# Renseigner AUTH_SECRET (openssl rand -base64 32), puis les identifiants OAuth.
+# Renseigner AUTH_SECRET (openssl rand -base64 32). Les identifiants OAuth sont facultatifs.
 docker compose -p elite-pack-foundation up -d
 npm run db:deploy
 npm run db:seed
 npm run dev
 ```
 
-Dans GitHub OAuth Apps, déclarer le callback `http://localhost:3000/api/auth/callback/github`. Le premier accès crée atomiquement le compte, le portefeuille avec journal initial et le stock passif à zéro. La configuration initiale doit être seedée avant la première connexion. Les sessions sont persistées dans PostgreSQL ; Auth.js gère les cookies HTTP-only, HTTPS en production et les protections CSRF de ses actions. L’application désactive le fournisseur tant que ses identifiants manquent. Aucun mot de passe local n’est accepté. Le rôle ADMIN doit être attribué par un opérateur de confiance, jamais depuis le navigateur.
+La connexion locale fonctionne par e-mail et mot de passe dans `/inscription` et `/connexion`, sans GitHub. Le premier compte crée atomiquement le joueur, son portefeuille, le journal initial et le stock passif à zéro. La configuration initiale doit être seedée avant la première inscription. Les mots de passe sont hachés avec scrypt ; les sessions Auth.js utilisent un cookie JWT HTTP-only. Le rôle ADMIN reste contrôlé dans PostgreSQL et ne peut jamais être demandé par le navigateur. Voir [la connexion locale et l’accès administrateur](docs/authentication.md).
 
+GitHub est facultatif : si vous l’activez, déclarer le callback `http://localhost:3000/api/auth/callback/github` dans son application OAuth.
 Auth.js v5 utilise actuellement la version `5.0.0-beta.32` : choix nécessaire à cette intégration App Router, à revalider avant mise en production. Next.js et Prisma sont verrouillés dans `package-lock.json`.
 
 Le compose écoute uniquement sur localhost. Ses identifiants sont destinés au développement. En production, fournir PostgreSQL managé, URL de connexion et secrets via l’environnement. Ne jamais utiliser ces identifiants en production.
@@ -65,20 +66,20 @@ Consulter [l’architecture](docs/architecture.md), [la base](docs/database.md),
 
 ## Limites et prochaine étape
 
-Le login OAuth réel nécessite des identifiants et n’est pas simulé par les tests. Le parcours administrateur crée une session PostgreSQL de test pour vérifier les pages et API protégées. Les données de test sont retirées de façon ciblée; aucun reset n’est effectué. Playwright utilise son propre serveur sur le port 3100 et `.next-e2e`, sans réutiliser un serveur ouvert. `PLAYWRIGHT_PORT` permet de changer son port.
+Le login OAuth réel reste facultatif et nécessite ses identifiants. Le parcours administrateur utilise un cookie JWT de test signé et vérifie les rôles PostgreSQL réels. Le parcours de connexion locale utilise l’inscription et la connexion réelles, sans simuler le fournisseur Credentials. Les données de test sont retirées de façon ciblée; aucun reset n’est effectué. Playwright utilise son propre serveur sur le port 3100 et `.next-e2e`, sans réutiliser un serveur ouvert. `PLAYWRIGHT_PORT` permet de changer son port.
 
 Les imports TheSportsDB sont disponibles dans `/admin/imports` après configuration de la clé API et du rôle ADMIN. Recherche par nom, import du catalogue et import d’un athlète par identifiant sont disponibles. Les corrections restent prioritaires aux réimports et les identités ambiguës nécessitent une liaison explicite. Voir [le guide d’import](docs/imports.md).
 
-La génération passive, les achats et l’ouverture sont uniquement modélisés : leurs transactions et tests de concurrence seront implémentés lors de la phase cartes/boosters. Les montants utilisent des entiers PostgreSQL `BIGINT`, à sérialiser en chaînes décimales dans les API. Les images sportives restent masquées jusqu’à validation de leurs droits. Aucun catalogue complet n’est codé en dur.
+La génération passive, les achats et l’ouverture sont uniquement modélisés : leurs transactions et tests de concurrence seront implémentés lors de la phase cartes/boosters. Les montants utilisent des entiers PostgreSQL `BIGINT`, à sérialiser en chaînes décimales dans les API. Les images sportives restent masquées jusqu’à validation documentée dans `/admin/images`. Voir [les droits des images](docs/images-rights.md) et [le dossier Commons de démonstration](docs/image-review-example.md). Aucun catalogue complet n’est codé en dur.
 
 Avant publication, limiter aussi les routes OAuth à la passerelle d’hébergement. L’audit des dépendances et les vérifications sont détaillés dans [docs/verification.md](docs/verification.md).
 
-Prochaine étape : publier le socle et valider le GitHub Project, ses relations parent/enfant, ses vues et ses automatisations. Ensuite : enrichissement Wikidata et validation des images, puis éditions de cartes et contrôle transactionnel des quantités.
+Prochaine étape : faire relire le socle et les preuves du POC, puis compléter le rendu dans la feuille lorsque sa ligne sera identifiée. Après validation de l’architecture : enrichissement Wikidata et validation des images, puis éditions de cartes et contrôle transactionnel des quantités.
 
 ## Travailler en équipe
 
-Lire [CONTRIBUTING.md](CONTRIBUTING.md) pour le démarrage et les PR, [GUIDELINES.md](GUIDELINES.md) pour les conventions et SemVer, puis [le workflow des tickets](docs/workflow.md) pour les statuts et critères DoR/DoD. La stratégie est GitHub Flow : `main`, branches courtes par ticket et revue obligatoire; les versions commencent à `0.1.0`.
+Lire [CONTRIBUTING.md](CONTRIBUTING.md) pour le démarrage et les PR, [GUIDELINES.md](GUIDELINES.md) pour les conventions et SemVer, puis [le workflow des tickets](docs/workflow.md) pour les statuts et critères DoR/DoD. Les branches de fonctionnalité partent de `dev` (intégration) et `dev` est promue vers `main` (stable) par PR, les deux étant protégées; les versions commencent à `0.1.0`.
 
-Les [automatisations préparées](docs/automations.md) comprennent CI, triage des issues et Dependabot. Leur activation réelle nécessite les fichiers publiés dans le dépôt; les workflows natifs du Project doivent être configurés et démontrés séparément. Les liens du dépôt et du suivi doivent être reportés dans la feuille demandée par le TD après vérification des accès.
+Les [automatisations](docs/automations.md) comprennent CI, triage des issues et Dependabot. La CI du socle et le triage ont réussi sur GitHub ; les transitions initiales, de clôture et de réouverture du Project ont été démontrées. Les liens du dépôt et du suivi restent à reporter dans la feuille demandée par le TD lorsque la ligne de destination sera identifiée.
 
 Pour vérifier le backlog sans appel GitHub : `npm run project:preview`. Le [guide GitHub Projects](docs/github-projects.md) explique la préparation des sous-issues, des vues et des champs. L’importeur conserve les éléments déjà créés lors d’une reprise; son mode d’application nécessite un projet cible et un accès GitHub explicites.

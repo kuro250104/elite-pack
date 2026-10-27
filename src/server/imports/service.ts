@@ -9,10 +9,11 @@ import { assertAdminActor, importSports } from "@/server/sports/service";
 import { consumeRateLimit, deferRateLimit } from "@/server/security/rate-limit";
 import { importCommandSchema, idempotencyKeySchema, type ImportCommand } from "./validation";
 
+import { requireSportsDbConfiguration } from "./configuration";
+
 const providerKey = "provider:thesportsdb";
 export function configuredProvider(client: PrismaClient = db): AthleteProvider {
-  const apiKey = process.env.THESPORTSDB_API_KEY;
-  if (!apiKey || !/^\d+$/.test(apiKey)) throw new ApiError("PROVIDER_NOT_CONFIGURED", "Configurez la clé TheSportsDB avant de lancer un import.", 503);
+  const { apiKey } = requireSportsDbConfiguration();
   return new TheSportsDbProvider({apiKey, maxRetries: 0}, async (url, options) => {
     const response = await fetch(url, options);
     if (response.status === 429) {

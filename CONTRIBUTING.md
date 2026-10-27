@@ -9,14 +9,14 @@ Prérequis : Node.js 22.12 ou supérieur, npm et Docker avec Compose. Les versio
 ```sh
 npm ci
 cp .env.example .env
-# Renseigner AUTH_SECRET et les identifiants OAuth dans .env.
+# Renseigner le mot de passe PostgreSQL local et AUTH_SECRET. OAuth est facultatif.
 docker compose -p elite-pack-foundation up -d
 npm run db:deploy
 npm run db:seed
 npm run dev
 ```
 
-Générer `AUTH_SECRET` avec `openssl rand -base64 32`. Déclarer dans l’application OAuth GitHub le callback `http://localhost:3000/api/auth/callback/github`. Renseigner `THESPORTSDB_API_KEY` pour les imports réels. Ne pas committer `.env` ni les secrets. Les identifiants PostgreSQL de `.env.example` servent exclusivement au développement local. Le seed ne crée pas d’administrateur ; le rôle doit être attribué par un opérateur de confiance.
+Générer `AUTH_SECRET` avec `openssl rand -base64 32`. La connexion locale par e-mail et mot de passe ne nécessite pas GitHub. Pour activer l’option GitHub, déclarer dans l’application OAuth le callback `http://localhost:3000/api/auth/callback/github`. Renseigner `THESPORTSDB_API_KEY` pour les imports réels. Ne pas committer `.env` ni les secrets. Les identifiants PostgreSQL de `.env.example` servent exclusivement au développement local. Le seed ne crée pas d’administrateur ; le rôle doit être attribué par un opérateur de confiance.
 
 Les commandes reproductibles et limites de l’authentification sont détaillées dans [README.md](README.md). Les tests PostgreSQL nécessitent une base de test migrée et `TEST_DATABASE_URL` explicite.
 
@@ -28,15 +28,15 @@ La cible GitHub du projet doit être configurée avant ce parcours. Tant que le 
 
 ## Créer une branche et une PR
 
-Le projet suit GitHub Flow : `main` est la branche de référence et chaque changement utilise une branche courte issue de `main`. Il n’y a pas de branche `develop` permanente.
+Le projet utilise deux branches permanentes protégées : `main` (version stable et livrable) et `dev` (intégration et tests). Chaque changement utilise une branche courte issue de `dev`. Le détail des règles figure dans [le workflow](docs/workflow.md#branches-et-protections).
 
 ```sh
-git switch main
+git switch dev
 git pull --ff-only
 git switch -c feat/EP02-02-import-athlete
 ```
 
-Préfixes : `feat/`, `fix/`, `docs/`, `test/` ou `chore/`. Le code `EP02-02` est l’identifiant stable du ticket ; l’issue GitHub garde son propre numéro. Utiliser un slug lisible en anglais, en minuscules avec tirets. Ouvrir une PR vers `main` et lier l’issue avec `Closes #123`. Associer aussi la PR au board.
+Préfixes : `feat/`, `fix/`, `docs/`, `test/` ou `chore/`. Le code `EP02-02` est l’identifiant stable du ticket ; l’issue GitHub garde son propre numéro. Utiliser un slug lisible en anglais, en minuscules avec tirets. Ouvrir une PR vers `dev` et lier l’issue avec `Closes #123`. Associer aussi la PR au board. Seules `dev` (PR de promotion) et `hotfix/*` peuvent ouvrir une PR vers `main`.
 
 Une PR explique le problème, le résultat, les vérifications réellement exécutées et les risques. Ajouter une capture pour une modification visuelle et détailler toute migration. Le numéro GitHub doit être remplacé par celui de l’issue réelle, jamais laissé en exemple.
 
@@ -62,6 +62,6 @@ Relire les migrations SQL, conserver les CHECK et index personnalisés. Ne jamai
 
 ## Finaliser
 
-Passer le ticket à `Review` lorsque la PR est prête et que les vérifications requises passent. Fusionner après revue et contrôles obligatoires. Le ticket passe à `Done` lorsque ses critères d’acceptation sont vérifiés et sa PR fusionnée. Supprimer la branche courte une fois fusionnée.
+Passer le ticket à `Review` lorsque la PR est prête et que les vérifications requises passent. Fusionner dans `dev` (squash) après revue et contrôles obligatoires. Le ticket passe à `Done` lorsque ses critères d’acceptation sont vérifiés et sa PR fusionnée dans `dev`. Supprimer la branche courte une fois fusionnée.
 
 Utiliser des commits tels que `feat(imports): preserve administrator overrides`, `fix(auth): reject unauthorized role updates` ou `docs(workflow): document review requirements`. Les textes de l’application et la documentation destinée à l’équipe restent en français.

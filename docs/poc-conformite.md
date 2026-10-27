@@ -1,43 +1,44 @@
 # Conformité au TD POC
 
-Référence : `TD_ POC (1).pdf`, deux pages. Le TD demande une documentation Markdown, une stratégie de branches et un outil de gestion réellement utilisable. Le suivi doit présenter au moins quatre EPICs, chacun avec un travail frontend et backend, leurs enfants, des estimations, labels/champs, boards et une automatisation de base. Les liens GitHub et outil doivent être inscrits dans la feuille de rendu.
+Référence : `TD_ POC (1).pdf`, deux pages. Le TD demande une documentation Markdown, une stratégie de branches et un outil de gestion utilisable, avec au moins quatre EPICs, leurs enfants frontend/backend, estimations, labels/champs, boards et automatisation. Les liens du dépôt et de l’outil doivent être inscrits dans la feuille de rendu.
 
-Ce document distingue les éléments préparés localement des preuves nécessitant un dépôt et un projet GitHub réels. Il ne constitue pas une note attribuée par le correcteur.
+## État vérifié le 9 octobre 2026
+
+Le [dépôt public](https://github.com/kuro250104/elite-pack) est publié sur `main` au commit `38c93b4`. Le [Project public nº 4](https://github.com/users/kuro250104/projects/4) contient les quatre EPICs et seize sous-issues natives, soit les issues nº 1 à 20. La [CI distante](https://github.com/kuro250104/elite-pack/actions/runs/37938740829) a réussi : lint, TypeScript, 44 tests unitaires, 32 tests PostgreSQL, cinq parcours E2E et compilation.
+
+Ce document recense les preuves disponibles et les éléments restant à vérifier. Il ne constitue pas une note attribuée par le correcteur et ne revendique pas une conformité complète du rendu.
 
 ## Matrice du barème — 10 points
 
-| Critère | Points | Preuve disponible | État et preuve encore nécessaire |
+| Critère | Points | Preuve disponible | Vérification restante |
 | --- | ---: | --- | --- |
-| Documentation Markdown | 1 | [README](../README.md), [CONTRIBUTING](../CONTRIBUTING.md), [GUIDELINES](../GUIDELINES.md), [workflow](workflow.md) | Rédigée localement ; vérifier les liens après publication du dépôt |
-| Contexte du projet | 1 | Présentation du TCG dans README, CONTRIBUTING et AGENTS ; architecture et limites documentées | Documenté localement ; le POC distingue socle réalisé et jeu futur |
-| Installation | 2 | Prérequis, `.env.example`, Docker Compose, `npm ci`, migrations, seed et vérifications dans README/CONTRIBUTING | Procédure disponible ; preuves des commandes réellement exécutées dans [verification.md](verification.md), vérifier aussi le futur setup/CI sur clone propre |
-| Stratégie de branches | 2 | GitHub Flow, conventions, revue, SemVer et protection dans CONTRIBUTING/GUIDELINES/workflow | Stratégie documentée ; protection réelle de `main` et des tags à vérifier sur le dépôt GitHub |
-| Hiérarchie des tâches | 1 | Découpage de quatre EPICs avec enfants frontend/backend dans workflow et plan local de tickets | **À matérialiser** : issues GitHub et liens natifs parent/sous-issue ; le plan JSON ne suffit pas |
-| Automatisation basique | 1 | Procédure d’ajout au board et transitions décrite dans workflow | **À configurer et démontrer** sur un vrai GitHub Project ; CI seule ne valide pas l’automatisation de suivi |
-| Labels, champs et recherche | 1 | Types, identifiants, priorité, estimation, responsable, domaine, statut et filtres définis dans workflow | **À créer dans l’outil** puis tester la recherche d’un ticket réel |
-| Boards | 1 | Colonnes Backlog, Ready, In Progress, Review, Done ; DoR/DoD définies | **À créer et rendre accessible** ; une table Markdown ne remplace pas un board opérationnel |
+| Documentation Markdown | 1 | [README](../README.md), [CONTRIBUTING](../CONTRIBUTING.md), [GUIDELINES](../GUIDELINES.md), [workflow](workflow.md), publiés dans le dépôt | Relire les liens avant remise |
+| Contexte du projet | 1 | TCG multisport, architecture et séparation entre socle réalisé et fonctionnalités futures documentés | Revue finale du correcteur |
+| Installation | 2 | Procédure, environnement d’exemple, migrations/seed et [CI sous Node.js 22 réussie](https://github.com/kuro250104/elite-pack/actions/runs/37938740829) | Vérification du démarrage OAuth complet avec identifiants configurés |
+| Stratégie de branches | 2 | Flux `feat/*` → `dev` → `main`, revue et SemVer documentés ; rulesets GitHub actifs sur `main`, `dev` et tags `v*` ([workflow](workflow.md#branches-et-protections)) | Démontrer un refus de PR vers `main` hors `dev`/`hotfix/*` et conserver une capture des rulesets |
+| Hiérarchie des tâches | 1 | Quatre EPICs et seize enfants frontend/backend, reliés par les sous-issues natives dans le [Project](https://github.com/users/kuro250104/projects/4) | Conserver l’accès lors de la remise |
+| Automatisation basique | 1 | Huit workflows Projects activés ; issue [nº 24](https://github.com/kuro250104/elite-pack/issues/24) ajoutée automatiquement en Backlog puis clôturée automatiquement en Done ; vingt exécutions de triage réussies | Réouverture vers Ready vérifiée ; PR nº 25 liée à l’issue nº 4 : passage Ready → Review vérifié, fusion vers Done restant à démontrer |
+| Labels, champs et recherche | 1 | Labels de domaine/type/phase/priorité ; Status à cinq valeurs ordonnées, Priority P1/P2/P3 et Estimation ; total de 81 points sur les enfants | Réaliser la recherche de démonstration demandée et vérifier les responsables selon l’organisation du groupe |
+| Boards | 1 | Vues EPICs en table, Kanban groupé par Status et trié par Priority, backlog en table avec champs visibles | Conserver les captures ou liens des vues pour le rendu |
 
 ## Livrables et accès
 
 | Livrable demandé | Situation actuelle |
 | --- | --- |
-| README à la racine | Présent, installation et contexte documentés |
-| Documents de contribution/conventions | CONTRIBUTING.md et GUIDELINES.md préparés |
-| Au moins quatre EPICs | Découpage préparé ; nombre et relations doivent être vérifiés dans l’outil réel |
-| Enfants frontend/backend | Prévus pour chaque EPIC ; issues natives restant à créer |
-| Estimations et priorités | Convention définie ; champs réels restant à renseigner |
-| Lien du dépôt GitHub dans la feuille | Dépôt cible fourni : [kuro250104/elite-pack](https://github.com/kuro250104/elite-pack) ; publication et inscription dans la feuille à vérifier |
-| Lien de l’outil de gestion | Aucun GitHub Project réel vérifié ; non renseigné |
-| Accès du correcteur | À tester lorsque les URL et règles de partage sont disponibles |
+| Dépôt GitHub | [kuro250104/elite-pack](https://github.com/kuro250104/elite-pack), public et publié |
+| README et conventions | Documents présents dans le dépôt publié |
+| Au moins quatre EPICs | Quatre issues EPIC et relations natives vérifiées |
+| Enfants frontend/backend | Seize enfants au total, répartis dans les quatre EPICs |
+| Estimations et priorités | Champs réels renseignés ; 81 points pour les seize enfants |
+| Outil de gestion | [GitHub Project nº 4](https://github.com/users/kuro250104/projects/4), public |
+| Liens dans la feuille Google de rendu | **Feuille non éditée** : nom ou numéro de groupe et ligne correspondante non fournis |
+| Protection des branches et tags | Rulesets actifs sur `main`, `dev` et `v*` ; refus d’une PR non autorisée vers `main` à démontrer |
 
-## Preuves à collecter pour fermer le rendu
+## Pour terminer la remise
 
-1. URL du dépôt réel, branche `main`, documentation et exécution CI vérifiée sur une PR.
-2. URL du Project, accès correcteur et board avec les cinq colonnes.
-3. Quatre issues EPIC avec au moins un enfant frontend et un enfant backend chacune, reliés par la relation native.
-4. Vue présentant labels, responsables, priorités et estimations ; recherche d’un ticket par domaine et statut.
-5. Ticket de démonstration établissant l’ajout automatique et les transitions du board.
-6. Protection vérifiée de `main` et des tags `v*`, procédure de version documentée sans publication automatique.
-7. Liens du dépôt et de l’outil inscrits dans la feuille demandée, avec accès vérifié.
+1. Démontrer les protections actives : refus d’une PR vers `main` hors `dev`/`hotfix/*` et d’un push direct ; conserver une capture des rulesets.
+2. Terminer, si exigées, les démonstrations des transitions PR vers Review et fusion vers Done.
+3. Identifier la ligne du groupe dans la feuille Google puis y inscrire les liens du dépôt et du Project.
+4. Vérifier l’accès du correcteur, les responsables et les recherches attendues ; conserver les preuves du board et des automatismes.
 
-Les tests du code et les migrations PostgreSQL sont des preuves techniques utiles ; ils ne remplacent pas les preuves de configuration de l’outil de gestion. Aucune création distante, protection, publication, automatisation active ou conformité complète du rendu n’est revendiquée ici.
+Les [preuves du POC](poc-preuves.md) réunissent les vérifications distantes. Les tests techniques, la hiérarchie distante et les automatismes démontrés sont des preuves distinctes. La démonstration des protections et l’inscription dans la feuille restent nécessaires pour fermer le rendu.

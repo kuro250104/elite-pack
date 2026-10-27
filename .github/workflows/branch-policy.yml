@@ -1,0 +1,27 @@
+name: Politique des branches
+on:
+  pull_request:
+    branches: [main]
+permissions: {}
+jobs:
+  source-branch:
+    name: Origine de la PR vers main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vérifier la branche source
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO: ${{ github.repository }}
+        run: |
+          if [ "$HEAD_REPO" != "$BASE_REPO" ]; then
+            echo "::error::Une PR vers main doit provenir du dépôt lui-même."
+            exit 1
+          fi
+          case "$HEAD_REF" in
+            dev|hotfix/*) echo "Branche source autorisée : $HEAD_REF" ;;
+            *)
+              echo "::error::Une PR vers main doit provenir de dev ou d'une branche hotfix/* (reçu : $HEAD_REF). Ciblez dev."
+              exit 1
+              ;;
+          esac

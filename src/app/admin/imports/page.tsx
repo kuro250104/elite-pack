@@ -7,6 +7,7 @@ import { AthleteForm } from "@/components/admin/athlete-form";
 import { SportForm } from "@/components/admin/sport-form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { getSportsDbConfigurationStatus } from "@/server/imports/configuration";
 
 type Params = Record<string, string | string[] | undefined>;
 function pageNumber(value: string | string[] | undefined) { const number = Number(value); return Number.isInteger(number) && number > 0 ? Math.min(number, 10000) : 1; }
@@ -15,6 +16,7 @@ const pageSize = 24;
 
 export default async function ImportsPage({ searchParams }: { searchParams: Promise<Params> }) {
   await requireAdmin();
+  const configured = getSportsDbConfigurationStatus().configured;
   const params = await searchParams;
   const jobsPage = pageNumber(params.jobsPage), sportsPage = pageNumber(params.sportsPage), page = pageNumber(params.page);
   const query = typeof params.query === "string" ? params.query.trim().slice(0, 100) : "";
@@ -37,12 +39,12 @@ export default async function ImportsPage({ searchParams }: { searchParams: Prom
     </nav>;
   }
   return <main id="contenu" className="mx-auto min-w-0 max-w-6xl space-y-12 px-5 py-12 sm:px-8">
-    <header className="space-y-4"><nav aria-label="Administration" className="flex flex-wrap gap-4 text-sm text-primary"><Link href="/admin">Administration</Link><a href="#historique">Historique</a><a href="#sports">Sports</a><a href="#athletes">Athlètes</a></nav><h1 className="text-3xl font-bold">Imports et catalogue sportif</h1><p className="max-w-3xl text-muted-foreground">Importez les données depuis TheSportsDB, vérifiez les traductions et corrigez les identités. Aucune photo n’est affichée sans validation de ses droits d’utilisation.</p></header>
+    <header className="space-y-4"><nav aria-label="Administration" className="flex flex-wrap gap-4 text-sm text-primary"><Link href="/admin">Administration</Link><Link href="/admin/images">Droits des images</Link><a href="#historique">Historique</a><a href="#sports">Sports</a><a href="#athletes">Athlètes</a></nav><h1 className="text-3xl font-bold">Imports et catalogue sportif</h1><p className="max-w-3xl text-muted-foreground">Importez les données depuis TheSportsDB, vérifiez les traductions et corrigez les identités. Aucune photo n’est affichée sans validation de ses droits d’utilisation.</p></header>
     <section aria-label="Lancer un import" className="grid items-start gap-6 md:grid-cols-2">
-      <div className="min-w-0 rounded-xl border bg-card p-6"><ImportForm configured={Boolean(process.env.THESPORTSDB_API_KEY)} kind="sports" /></div>
-      <div className="min-w-0 rounded-xl border bg-card p-6"><ImportForm configured={Boolean(process.env.THESPORTSDB_API_KEY)} kind="athlete" /></div>
+      <div className="min-w-0 rounded-xl border bg-card p-6"><ImportForm configured={configured} kind="sports" /></div>
+      <div className="min-w-0 rounded-xl border bg-card p-6"><ImportForm configured={configured} kind="athlete" /></div>
     </section>
-    <ProviderSearch configured={Boolean(process.env.THESPORTSDB_API_KEY)} />
+    <ProviderSearch configured={configured} />
     <section id="historique" aria-labelledby="jobs-title"><h2 id="jobs-title" className="mb-4 text-2xl font-semibold">Historique des imports</h2>
       <div className="overflow-x-auto rounded-xl border"><table className="w-full text-left text-sm"><caption className="sr-only">Imports TheSportsDB, état et résultat</caption><thead className="bg-secondary"><tr><th className="p-4" scope="col">Date</th><th className="p-4" scope="col">État</th><th className="p-4" scope="col">Éléments traités</th><th className="p-4" scope="col">Détail</th></tr></thead><tbody>{jobs.map(job => <tr key={job.id} className="border-t"><td className="p-4 whitespace-nowrap">{job.createdAt.toLocaleString("fr-FR", { timeZone: "Europe/Paris" })}</td><td className="p-4">{statuses[job.status]}</td><td className="p-4">{job.processedCount.toLocaleString("fr-FR")}</td><td className="max-w-md p-4 break-words">{job.errorMessage ?? "—"}<span className="mt-1 block text-xs text-muted-foreground">Identifiant : {job.id}</span></td></tr>)}{!jobs.length && <tr><td colSpan={4} className="p-6 text-muted-foreground">Aucun import enregistré.</td></tr>}</tbody></table></div>
       {pagination("jobsPage", jobsPage, jobsCount, "historique")}
