@@ -47,6 +47,7 @@ test("administration réelle : autorisations, corrections et mobile", async ({pa
       await tx.rateLimitBucket.deleteMany({where: {key: `admin-api:${user.id}`}});
       await tx.athlete.delete({where: {id: athlete.id}});
       await tx.sport.delete({where: {id: sport.id}});
+      await tx.passiveBoosterState.deleteMany({where: {userId: user.id}});
       await tx.user.delete({where: {id: user.id}});
     });
     await prisma.$disconnect();
