@@ -7,6 +7,8 @@ import { sessionCookie } from "./auth-session";
 test("booster de bienvenue : cinq cartes frappées par le serveur sont révélées", async ({ page, baseURL }) => {
   const connectionString = process.env.TEST_DATABASE_URL;
   test.skip(!connectionString, "TEST_DATABASE_URL est nécessaire pour tester la boucle réelle.");
+  // Full player journey across six pages, compiled on first visit by the dev server.
+  test.setTimeout(120_000);
   const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: connectionString! }) });
   const token = randomUUID();
   const rarities: Rarity[] = ["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHIC"];
@@ -24,7 +26,7 @@ test("booster de bienvenue : cinq cartes frappées par le serveur sont révélé
         expect(existing.active).toBe(true);
         expect(existing.cardCount).toBe(5);
       }
-      const user = await tx.user.create({ data: { name: `Joueur ${token}` } }); userId = user.id;
+      const user = await tx.user.create({ data: { name: `Joueur ${token}`, wallet: { create: {} } } }); userId = user.id;
       const sport = await tx.sport.create({ data: { slug: `game-e2e-${token}`, nameFr: `Discipline ${token}`, providerName: `Fixture ${token}`, active: true } }); sportId = sport.id;
       const athlete = await tx.athlete.create({ data: { name: `Athlète de fixture ${token}`, sportId, nationality: "France", prestigeScore: 50 } }); athleteId = athlete.id;
       await tx.boosterSport.create({ data: { boosterTypeId: "discovery-booster", sportId } });
@@ -34,6 +36,9 @@ test("booster de bienvenue : cinq cartes frappées par le serveur sont révélé
         await tx.boosterEdition.create({ data: { boosterTypeId: "discovery-booster", editionId: edition.id } });
       }
     });
+    // Values come from RarityValue and prestige, exactly as the migration backfill computes them (no forced amount).
+    await prisma.$executeRaw`UPDATE "CardEdition" e SET "baseValue" = rv."baseValue" * (100 + LEAST(100, GREATEST(0, COALESCE(a."prestigeOverride", a."prestigeScore")))) / 100
+      FROM "Athlete" a, "RarityValue" rv WHERE a.id = e."athleteId" AND rv.rarity = e.rarity AND e."athleteId" = ${athleteId}`;
     await page.context().addCookies([await sessionCookie(userId, baseURL!)]);
     await page.goto("/boosters");
     await page.getByLabel("Choisir un sport", { exact: true }).selectOption(sportId);
@@ -91,11 +96,31 @@ test("booster de bienvenue : cinq cartes frappées par le serveur sont révélé
     await expect(page.getByText(`${owned.size} / 6 possédée${owned.size > 1 ? "s" : ""}`, { exact: true })).toBeVisible();
     await expect(page.getByText("Aucune biographie en français n’est disponible pour cet athlète.")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    // Bank resale: the server prices the card (60 % of its computed value), retires it and credits the wallet shown in the header.
+    await page.goto(`/collection?sportId=${sportId}`);
+    // Target one card: its sell button turns into "Confirmer" / "Annuler" once clicked.
+    const sold = page.locator("#collection-cards > div").first();
+    const sellButton = sold.getByRole("button", { name: /^Revendre .* à la banque pour .+$/ });
+    const label = await sellButton.getAttribute("aria-label");
+    const [, cardLabel, price] = label!.match(/^Revendre (.+) à la banque pour (.+)$/)!;
+    expect(Number(price!.replace(/\D/gu, ""))).toBeGreaterThan(0);
+    const confirmSale = sold.getByRole("button", { name: `Confirmer la revente de ${cardLabel} pour ${price}`, exact: true });
+    // The button is server-rendered; retry until the client component has hydrated.
+    await expect(async () => {
+      if (!await confirmSale.isVisible()) await sellButton.click({ timeout: 2_000 });
+      await expect(confirmSale).toBeVisible({ timeout: 1_000 });
+    }).toPass({ timeout: 15_000 });
+    await confirmSale.click();
+    await expect(page.locator("#collection-cards article")).toHaveCount(4);
+    await expect(page.getByLabel(`Solde : ${price}`, { exact: true })).toBeVisible();
+    expect(await prisma.walletTransaction.count({ where: { walletId: userId, type: "BANK_SALE" } })).toBe(1);
   } finally {
     await prisma.$transaction(async tx => {
       if (userId) {
         await tx.cardDiscovery.deleteMany({ where: { userId } });
-        await tx.cardInstance.deleteMany({ where: { ownerId: userId } });
+        await tx.walletTransaction.deleteMany({ where: { walletId: userId } });
+        await tx.wallet.deleteMany({ where: { userId } });
+        await tx.cardInstance.deleteMany({ where: { OR: [{ ownerId: userId }, { editionId: { in: editions } }] } });
         await tx.boosterOpening.deleteMany({ where: { userId } });
         await tx.boosterInventory.deleteMany({ where: { userId } });
         await tx.passiveBoosterState.deleteMany({ where: { userId } });

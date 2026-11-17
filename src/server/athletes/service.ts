@@ -3,6 +3,7 @@ import { Prisma, type DataProvider } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/api/errors";
 import type { ExternalAthlete } from "@/providers/types";
 import { athletePatchSchema, externalAthleteSchema } from "./validation";
+import { revalueEditions } from "@/server/economy/valuation";
 
 const providers: Record<string, DataProvider> = { thesportsdb: "THESPORTSDB", wikidata: "WIKIDATA", olympedia: "OLYMPEDIA" };
 const normalize = (value: string) => value.trim().replace(/\s+/g, " ").toLowerCase();
@@ -92,6 +93,7 @@ export async function updateAthlete(tx: Prisma.TransactionClient, id: string, pa
   const updated = await tx.athlete.update({ where: { id }, data: { ...scalars,
     ...(birthDate !== undefined ? { birthDate: birthDate === null ? null : new Date(`${birthDate}T00:00:00Z`) } : {}),
     administratorOverrides: protectedFields as Prisma.InputJsonObject } });
+  if (parsed.prestigeOverride !== undefined) await revalueEditions(tx, { athleteId: id });
   const previous = Object.fromEntries(Object.keys(parsed).map((field) => [field,
     field === "birthDate" ? before.birthDate?.toISOString().slice(0, 10) ?? null : before[field as keyof typeof before]]));
   await tx.adminAuditLog.create({ data: { actorId, action: "ATHLETE_UPDATE", entityType: "Athlete", entityId: id,

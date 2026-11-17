@@ -1,6 +1,7 @@
 import "server-only";
 import type { Prisma } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/api/errors";
+import { revalueEditions } from "@/server/economy/valuation";
 
 /**
  * Prestige is derived from the honours stored in Athlete.achievements (TheSportsDB lookuphonours.php).
@@ -36,7 +37,7 @@ export function prestigeWithinSport(points: ReadonlyMap<string, number>): Map<st
   return scores;
 }
 
-/** Recomputes every athlete of one sport inside the caller's transaction and records the change. */
+/** Recomputes every athlete of one sport and the value of their editions, inside the caller's transaction. */
 export async function recomputeSportPrestige(tx: Prisma.TransactionClient, sportId: string, actorId: string) {
   const actor = await tx.user.findUnique({ where: { id: actorId }, select: { role: true } });
   if (actor?.role !== "ADMIN") throw new ApiError("FORBIDDEN", "Cette opération est réservée aux administrateurs.", 403);
@@ -45,7 +46,9 @@ export async function recomputeSportPrestige(tx: Prisma.TransactionClient, sport
   const scores = prestigeWithinSport(new Map(athletes.map((athlete) => [athlete.id, honourPoints(athlete.achievements)])));
   const changed = athletes.filter((athlete) => scores.get(athlete.id) !== athlete.prestigeScore);
   for (const athlete of changed) await tx.athlete.update({ where: { id: athlete.id }, data: { prestigeScore: scores.get(athlete.id)! } });
-  const result = { sportId, athletes: athletes.length, changed: changed.length };
+  // Edition values depend on prestige, so they follow every recomputation.
+  const revalued = await revalueEditions(tx, { sportId });
+  const result = { sportId, athletes: athletes.length, changed: changed.length, revalued };
   await tx.adminAuditLog.create({ data: { actorId, action: "PRESTIGE_RECOMPUTE", entityType: "Sport", entityId: sportId, after: result } });
   return result;
 }

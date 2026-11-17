@@ -7,6 +7,8 @@ import { AthleteCard, rarityPresentation } from "@/components/cards/athlete-card
 import { MissingCard } from "@/components/collection/missing-card";
 import { CollectionProgress } from "@/components/collection/collection-progress";
 import { GameNav } from "@/components/layout/game-nav";
+import { SellToBankButton } from "@/components/economy/sell-to-bank-button";
+import { formatCoins } from "@/lib/currency";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -62,7 +64,17 @@ export default async function CollectionPage({ searchParams }: {
     <div id="collection-cards" className="grid items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {missingView
         ? collection.missing.map((card) => <MissingCard key={card.editionId} card={card} />)
-        : collection.cards.map((card) => <div key={card.instanceId} className="space-y-2"><AthleteCard card={card} /><p className="text-center text-xs text-muted-foreground">{collection.duplicates[card.editionId] ?? 1} exemplaire{(collection.duplicates[card.editionId] ?? 1) > 1 ? "s" : ""} de cette édition · <Link href={`/athletes/${card.athleteId}`} className="text-primary hover:underline">Voir la fiche</Link></p></div>)}
+        : collection.cards.map((card) => <div key={card.instanceId} className="flex h-full min-w-0 flex-col gap-2">
+            {/* The card fills the remaining height; the lines below never overlap the next row. */}
+            <div className="flex flex-1 flex-col"><AthleteCard card={card} /></div>
+            <p className="text-center text-xs text-muted-foreground">{collection.duplicates[card.editionId] ?? 1} exemplaire{(collection.duplicates[card.editionId] ?? 1) > 1 ? "s" : ""} de cette édition · <Link href={`/athletes/${card.athleteId}`} className="text-primary hover:underline">Voir la fiche</Link></p>
+            {card.baseValue !== undefined && card.bankPrice !== undefined && <>
+              <p className="text-center text-xs text-muted-foreground">Valeur : {formatCoins(BigInt(card.baseValue))} · Rachat banque : {formatCoins(BigInt(card.bankPrice))}</p>
+              {BigInt(card.bankPrice) > BigInt(0)
+                ? <SellToBankButton cardInstanceId={card.instanceId} cardLabel={`${card.name}, ${card.editionName}`} priceLabel={formatCoins(BigInt(card.bankPrice))} />
+                : <p className="text-center text-xs text-muted-foreground">Pas encore de valeur de rachat</p>}
+            </>}
+          </div>)}
     </div>
     {shown === 0 && <div className="rounded-xl border border-dashed p-8 text-center">{missingView
       ? <p className="text-muted-foreground">Aucune carte manquante pour cette sélection.</p>
