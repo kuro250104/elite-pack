@@ -7,7 +7,6 @@ import { GameNav } from "@/components/layout/game-nav";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-const selectClass = "min-h-11 w-full min-w-0 rounded-md border bg-background px-3 text-sm";
 const statusLabels = { owned: "Dans ma collection", "sold-to-bank": "Revendue à la banque", traded: "Vendue sur le marché" };
 
 export default async function OpeningHistoryPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -25,7 +24,7 @@ export default async function OpeningHistoryPage({ searchParams }: { searchParam
       <p className="mt-3 text-muted-foreground">{history.total.toLocaleString("fr-FR")} ouverture{history.total > 1 ? "s" : ""}. Les cartes revendues ou échangées restent visibles ici.</p></header>
     {!parsed.success && <p role="alert" className="text-sm text-destructive">{parsed.error.issues[0]?.message ?? "Filtres invalides."} Les filtres ont été réinitialisés.</p>}
     <form action="/boosters/historique" className="grid items-end gap-4 rounded-xl border bg-card p-5 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="space-y-2"><label htmlFor="history-sport">Sport</label><select id="history-sport" name="sportId" defaultValue={query.sportId ?? ""} className={selectClass}><option value="">Tous les sports</option>{sports.map((sport) => <option key={sport.id} value={sport.id}>{sport.nameFr}</option>)}</select></div>
+      <div className="space-y-2"><label htmlFor="history-sport">Sport</label><select id="history-sport" name="sportId" defaultValue={query.sportId ?? ""} className="field-select"><option value="">Tous les sports</option>{sports.map((sport) => <option key={sport.id} value={sport.id}>{sport.nameFr}</option>)}</select></div>
       <div className="space-y-2"><label htmlFor="history-from">Du</label><Input id="history-from" name="from" type="date" defaultValue={query.from} /></div>
       <div className="space-y-2"><label htmlFor="history-to">Au</label><Input id="history-to" name="to" type="date" defaultValue={query.to} /></div>
       <Button type="submit">Filtrer</Button>
