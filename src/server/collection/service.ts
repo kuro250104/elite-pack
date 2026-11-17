@@ -24,6 +24,8 @@ export type MissingCardView = {
 };
 
 const prestige = Prisma.sql`COALESCE(a."prestigeOverride", a."prestigeScore")`;
+// French alphabetical order (accents next to their base letter), whatever the database default collation.
+const byName = Prisma.sql`a.name COLLATE "fr-x-icu" ASC`;
 const owns = (actorId: string) => Prisma.sql`EXISTS (SELECT 1 FROM "CardInstance" o
   WHERE o."editionId" = e.id AND o."ownerId" = ${actorId} AND o."retiredAt" IS NULL)`;
 // Editions a player can still obtain: active edition, athlete and sport.
@@ -43,10 +45,10 @@ function where(clauses: Prisma.Sql[]) { return Prisma.join(clauses, " AND "); }
 function orderBy(sort: CollectionQuery["sort"], recent: Prisma.Sql) {
   // Rarity enum values are declared from COMMON to MYTHIC, so DESC lists the rarest first.
   switch (sort) {
-    case "name": return Prisma.sql`a.name ASC, e.name ASC`;
-    case "rarity": return Prisma.sql`e.rarity DESC, a.name ASC`;
-    case "prestige": return Prisma.sql`${prestige} DESC, a.name ASC`;
-    case "value": return Prisma.sql`e."baseValue" DESC, a.name ASC`;
+    case "name": return Prisma.sql`${byName}, e.name COLLATE "fr-x-icu" ASC`;
+    case "rarity": return Prisma.sql`e.rarity DESC, ${byName}`;
+    case "prestige": return Prisma.sql`${prestige} DESC, ${byName}`;
+    case "value": return Prisma.sql`e."baseValue" DESC, ${byName}`;
     default: return recent;
   }
 }
