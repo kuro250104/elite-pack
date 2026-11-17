@@ -32,5 +32,6 @@ export const externalAthleteSchema = z.object({
     license: z.string().nullable(), attribution: z.string().nullable(),
     usageRestrictions: z.string().nullable(), approvedForDisplay: z.literal(false),
   })).max(20),
+  honours: z.array(z.object({ externalId: text, title: text, season: text.nullable(), team: text.nullable() })).max(500).optional(),
 });
 export type AthletePatch = z.infer<typeof athletePatchSchema>;

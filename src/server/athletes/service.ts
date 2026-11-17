@@ -16,6 +16,9 @@ async function lockAthlete(tx: Prisma.TransactionClient, id: string) {
   if (!athlete) throw new ApiError("ATHLETE_NOT_FOUND", "Athlète introuvable.", 404);
   return athlete;
 }
+function honoursJson(honours: NonNullable<ExternalAthlete["honours"]>): Prisma.InputJsonArray {
+  return honours.map((honour) => ({ title: honour.title, year: honour.season, team: honour.team, honourId: honour.externalId }));
+}
 function overrides(value: Prisma.JsonValue | null): Prisma.JsonObject {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
@@ -47,7 +50,8 @@ export async function applyExternalAthlete(tx: Prisma.TransactionClient, externa
     if (candidates.length) throw new ApiError("IDENTITY_REVIEW_REQUIRED", "Un athlète homonyme existe. Vérifiez son identité avant de le lier manuellement.", 409);
     const created = await tx.athlete.create({ data: { name: data.fullName, sportId,
       birthDate: data.birthDate ? new Date(`${data.birthDate}T00:00:00Z`) : null,
-      nationality: data.nationality, currentTeam: data.teamName, position: data.position, biography: data.biographyFrench } });
+      nationality: data.nationality, currentTeam: data.teamName, position: data.position, biography: data.biographyFrench,
+      ...(data.honours ? { achievements: honoursJson(data.honours) } : {}) } });
     athleteId = created.id;
   } else {
     const athlete = await lockAthlete(tx, athleteId);
@@ -62,6 +66,8 @@ export async function applyExternalAthlete(tx: Prisma.TransactionClient, externa
       if (value !== null && !Object.hasOwn(protectedFields, field)) Object.assign(update, { [field]: value });
     }
     if (data.birthDate && !Object.hasOwn(protectedFields, "birthDate")) update.birthDate = new Date(`${data.birthDate}T00:00:00Z`);
+    // Honours are refreshed only when they were fetched, so a provider outage never erases the stored list.
+    if (data.honours && !Object.hasOwn(protectedFields, "achievements")) update.achievements = honoursJson(data.honours);
     await tx.athlete.update({ where: { id: athleteId }, data: update });
   }
   await tx.athleteExternalId.upsert({ where: { provider_externalId: { provider, externalId: data.externalId } },

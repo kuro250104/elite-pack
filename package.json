@@ -25,7 +25,8 @@
     "project:apply": "node --import tsx scripts/project/bootstrap.ts --apply",
     "imports:run": "node --conditions=react-server --import tsx scripts/imports/bootstrap.ts",
     "admin:grant-local": "node --conditions=react-server --import tsx scripts/admin/grant-local.ts",
-    "game:prepare": "node --conditions=react-server --import tsx scripts/game/prepare.ts"
+    "game:prepare": "node --conditions=react-server --import tsx scripts/game/prepare.ts",
+    "prestige:recompute": "node --conditions=react-server --import tsx scripts/prestige/recompute.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",

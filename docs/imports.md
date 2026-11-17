@@ -55,3 +55,24 @@ Pour une preuve multisport minimale : importer les sports disponibles, vérifier
 La base locale contient le catalogue gratuit retourné (Football et Sports automobiles), Kylian Mbappé (`34162098`) et Lewis Hamilton (`34157136`). Les trois imports sont `COMPLETED`, avec audit et identifiants fournisseurs. Le rejeu de l’import de Mbappé retourne le même job avec `replay=true`. Les sports restent désactivés jusqu’à revue administrative ; aucune édition ni aucun booster n’a été créé.
 
 Un opérateur local sans compte OAuth ni session (`local-import-operator`) a été créé explicitement pour journaliser cet essai. La commande ne crée ni n’élève elle-même un administrateur. Les images restent non approuvées. Le [dossier Commons de Hamilton](image-review-example.md) est enregistré comme métadonnées à examiner. Aucune clé personnelle ni import exhaustif n’est revendiqué.
+
+## Palmarès et prestige
+
+L’import d’un athlète appelle ensuite `lookuphonours.php?id=` ([documentation officielle](https://www.thesportsdb.com/documentation), vérifiée le 17 novembre 2026). La réponse fournit notamment `idHonour`, `strHonour`, `strSeason` et `strTeam`. Elle est stockée dans `Athlete.achievements` sous la forme `{ title, year, team, honourId }`. Avec la clé gratuite, la documentation annonce au plus **5** titres par joueur (500 en premium). Ce second appel passe par le même quota partagé que les autres requêtes. S’il échoue, l’import aboutit quand même et le palmarès déjà stocké est conservé. Une correction administrative du champ `achievements` n’est jamais écrasée.
+
+Le prestige (`prestigeScore`, de 0 à 100) est recalculé pour tout le sport concerné, dans la transaction de l’import :
+
+- les points correspondent au nombre de titres distincts (titre et saison) ;
+- le score est le rang centile de l’athlète **au sein de son sport** : aucun sport n’est comparé à un autre ;
+- un athlète sans titre obtient 0, et des athlètes à égalité obtiennent le même score ;
+- la surcharge administrateur (`prestigeOverride`) n’est jamais modifiée et reste prioritaire à l’affichage.
+
+Comme la clé gratuite plafonne le palmarès à cinq titres, de nombreux athlètes très titrés finiront à égalité. Une clé premium élargit l’écart sans modification du code.
+
+Pour recalculer tous les sports à partir des palmarès déjà stockés, sans appel réseau :
+
+```sh
+npm run prestige:recompute -- --actor-id ID_ADMIN --confirm
+```
+
+Chaque sport est recalculé dans sa propre transaction et journalisé (`PRESTIGE_RECOMPUTE`). Les athlètes importés avant cette version n’ont pas de palmarès : réimportez-les pour le récupérer.
