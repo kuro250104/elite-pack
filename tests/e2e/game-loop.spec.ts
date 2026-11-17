@@ -81,6 +81,16 @@ test("booster de bienvenue : cinq cartes frappées par le serveur sont révélé
     await expect(stat("Boosters ouverts")).toHaveText("1");
     await expect(page.getByLabel("Solde : 0 pièce", { exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    // Opening the booster discovered the athlete: the encyclopedia sheet is unlocked and lists owned editions.
+    await page.getByRole("link", { name: "Athlètes", exact: true }).click();
+    await page.getByLabel("Athlète", { exact: true }).fill(token);
+    await page.getByRole("button", { name: "Rechercher", exact: true }).click();
+    await page.getByRole("link", { name: new RegExp(`Athlète de fixture ${token}`) }).click();
+    await expect(page.getByRole("heading", { name: `Athlète de fixture ${token}`, level: 1 })).toBeVisible();
+    await expect(page.getByText("Fiche débloquée", { exact: true })).toBeVisible();
+    await expect(page.getByText(`${owned.size} / 6 possédée${owned.size > 1 ? "s" : ""}`, { exact: true })).toBeVisible();
+    await expect(page.getByText("Aucune biographie en français n’est disponible pour cet athlète.")).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   } finally {
     await prisma.$transaction(async tx => {
       if (userId) {

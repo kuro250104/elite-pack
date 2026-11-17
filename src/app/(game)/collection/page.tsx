@@ -62,7 +62,7 @@ export default async function CollectionPage({ searchParams }: {
     <div id="collection-cards" className="grid items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {missingView
         ? collection.missing.map((card) => <MissingCard key={card.editionId} card={card} />)
-        : collection.cards.map((card) => <div key={card.instanceId} className="space-y-2"><AthleteCard card={card} /><p className="text-center text-xs text-muted-foreground">{collection.duplicates[card.editionId] ?? 1} exemplaire{(collection.duplicates[card.editionId] ?? 1) > 1 ? "s" : ""} de cette édition</p></div>)}
+        : collection.cards.map((card) => <div key={card.instanceId} className="space-y-2"><AthleteCard card={card} /><p className="text-center text-xs text-muted-foreground">{collection.duplicates[card.editionId] ?? 1} exemplaire{(collection.duplicates[card.editionId] ?? 1) > 1 ? "s" : ""} de cette édition · <Link href={`/athletes/${card.athleteId}`} className="text-primary hover:underline">Voir la fiche</Link></p></div>)}
     </div>
     {shown === 0 && <div className="rounded-xl border border-dashed p-8 text-center">{missingView
       ? <p className="text-muted-foreground">Aucune carte manquante pour cette sélection.</p>

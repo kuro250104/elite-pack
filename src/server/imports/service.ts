@@ -1,10 +1,11 @@
 import "server-only";
-import type { PrismaClient } from "@/generated/prisma/client";
-import type { AthleteProvider } from "@/providers/types";
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
+import type { AthleteProvider, ExternalAthlete } from "@/providers/types";
 import { TheSportsDbProvider } from "@/providers/thesportsdb/client";
 import { db } from "@/lib/db/prisma";
 import { ApiError } from "@/lib/api/errors";
 import { applyExternalAthlete } from "@/server/athletes/service";
+import { recomputeSportPrestige } from "@/server/athletes/prestige";
 import { assertAdminActor, importSports } from "@/server/sports/service";
 import { consumeRateLimit, deferRateLimit } from "@/server/security/rate-limit";
 import { importCommandSchema, idempotencyKeySchema, type ImportCommand } from "./validation";
@@ -27,6 +28,18 @@ export function configuredProvider(client: PrismaClient = db): AthleteProvider {
 export async function reserveProviderRequest(client: PrismaClient = db) {
   await client.$transaction(tx => consumeRateLimit(tx, providerKey, {limit: 30, windowSeconds: 60, minIntervalMs: 2100}));
 }
+/** Retries a shared-quota reservation refused with a short Retry-After; longer waits are reported as failures. */
+export async function waitForProviderSlot(reserve: () => Promise<void>,
+  wait: (ms: number) => Promise<void> = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), maxWaitMs = 5_000) {
+  for (let attempt = 0; ; attempt++) {
+    try { return await reserve(); }
+    catch (error) {
+      const delay = error instanceof ApiError && error.status === 429 ? Math.max(1, error.retryAfter ?? 1) * 1000 : Infinity;
+      if (attempt >= 2 || delay > maxWaitMs) throw error;
+      await wait(delay);
+    }
+  }
+}
 export async function reserveAdminRequest(actorId: string, client: PrismaClient = db) {
   await client.$transaction(async tx => {
     await assertAdminActor(tx, actorId);
@@ -37,6 +50,13 @@ interface ImportDependencies {
   client?: PrismaClient;
   provider?: () => AthleteProvider;
   reserveProvider?: () => Promise<void>;
+}
+/** Applies the athlete then recomputes the prestige of its sport in the same transaction. */
+async function importAthlete(tx: Prisma.TransactionClient, data: ExternalAthlete, actorId: string, targetAthleteId?: string) {
+  const imported = await applyExternalAthlete(tx, data, {actorId, targetAthleteId});
+  const {sportId} = await tx.athlete.findUniqueOrThrow({where: {id: imported.athleteId}, select: {sportId: true}});
+  const prestige = await recomputeSportPrestige(tx, sportId, actorId);
+  return {...imported, honours: data.honours?.length ?? null, prestige};
 }
 /** Réseau hors transaction ; données et état final du job sont validés ensemble. */
 export async function runImport(actorId: string, key: string, command: ImportCommand, dependencies: ImportDependencies = {}) {
@@ -76,13 +96,21 @@ export async function runImport(actorId: string, key: string, command: ImportCom
     if (input.kind === "athlete" && !Array.isArray(data) && data.externalId !== input.externalId) {
       throw new ApiError("INVALID_PROVIDER_RESPONSE", "L’identifiant renvoyé par le fournisseur ne correspond pas à la demande.", 502);
     }
+    if (input.kind === "athlete" && !Array.isArray(data) && provider.capabilities.honours && provider.getHonours) {
+      // Optional enrichment: a failed honours lookup keeps the stored list instead of failing the import.
+      try {
+        // The player lookup just used the shared slot (one call every 2.1 s): wait for the next one instead of failing.
+        await waitForProviderSlot(() => dependencies.reserveProvider ? dependencies.reserveProvider() : reserveProviderRequest(client));
+        data.honours = await provider.getHonours(input.externalId);
+      } catch { data.honours = undefined; }
+    }
     const job = await client.$transaction(async tx => {
       await tx.$queryRaw`SELECT id FROM "ImportJob" WHERE id = ${claim.job.id} FOR UPDATE`;
       const current = await tx.importJob.findUniqueOrThrow({where: {id: claim.job.id}});
       if (current.status !== "RUNNING") return current;
       const result = input.kind === "sports"
         ? await importSports(tx, data as Awaited<ReturnType<AthleteProvider["getSports"]>>, actorId)
-        : await applyExternalAthlete(tx, data as NonNullable<Awaited<ReturnType<AthleteProvider["getAthlete"]>>>, {actorId, targetAthleteId: input.targetAthleteId});
+        : await importAthlete(tx, data as NonNullable<Awaited<ReturnType<AthleteProvider["getAthlete"]>>>, actorId, input.targetAthleteId);
       const updated = await tx.importJob.update({where: {id: claim.job.id}, data: {status: "COMPLETED", completedAt: new Date(),
         processedCount: "processed" in result ? result.processed : 1, result}});
       await tx.adminAuditLog.create({data: {actorId, action: "IMPORT_COMPLETED", entityType: "ImportJob", entityId: updated.id, after: result}});
