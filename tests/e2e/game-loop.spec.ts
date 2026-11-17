@@ -73,6 +73,14 @@ test("booster de bienvenue : cinq cartes frappées par le serveur sont révélé
     await expect(page).toHaveURL(/status=missing/);
     await expect(page.locator("#collection-cards article")).toHaveCount(6 - owned.size);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    // The profile reflects the opening; the fixture player has no wallet, so the header shows a zero balance.
+    await page.getByRole("link", { name: "Mon profil", exact: true }).click();
+    await expect(page.getByRole("heading", { name: `Joueur ${token}`, level: 1 })).toBeVisible();
+    const stat = (label: string) => page.locator("div", { has: page.locator("dt", { hasText: new RegExp(`^${label}$`) }) }).locator("dd").first();
+    await expect(stat("Cartes possédées")).toHaveText("5");
+    await expect(stat("Boosters ouverts")).toHaveText("1");
+    await expect(page.getByLabel("Solde : 0 pièce", { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   } finally {
     await prisma.$transaction(async tx => {
       if (userId) {
