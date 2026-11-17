@@ -56,3 +56,18 @@ describe("Palmarès TheSportsDB", () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("Créneau du quota partagé TheSportsDB", () => {
+  it("attend le délai annoncé puis réessaie, sans dépasser deux nouvelles tentatives ni 5 secondes d’attente", async () => {
+    const { waitForProviderSlot } = await import("@/server/imports/service");
+    const { ApiError } = await import("@/lib/api/errors");
+    const waits: number[] = [];
+    const wait = async (ms: number) => { waits.push(ms); };
+    let calls = 0;
+    await waitForProviderSlot(async () => { if (++calls < 3) throw new ApiError("RATE_LIMITED", "Trop de requêtes.", 429, 2); }, wait);
+    expect([calls, waits]).toEqual([3, [2000, 2000]]);
+    await expect(waitForProviderSlot(async () => { throw new ApiError("RATE_LIMITED", "Trop de requêtes.", 429, 1); }, wait)).rejects.toMatchObject({ status: 429 });
+    await expect(waitForProviderSlot(async () => { throw new ApiError("RATE_LIMITED", "Trop de requêtes.", 429, 60); }, wait)).rejects.toMatchObject({ retryAfter: 60 });
+    await expect(waitForProviderSlot(async () => { throw new Error("Autre panne"); }, wait)).rejects.toThrow("Autre panne");
+  });
+});
