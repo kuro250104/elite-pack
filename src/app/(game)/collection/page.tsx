@@ -8,6 +8,7 @@ import { MissingCard } from "@/components/collection/missing-card";
 import { CollectionProgress } from "@/components/collection/collection-progress";
 import { GameNav } from "@/components/layout/game-nav";
 import { SellToBankButton } from "@/components/economy/sell-to-bank-button";
+import { CancelListingButton, ListForSaleForm } from "@/components/marketplace/marketplace-actions";
 import { formatCoins } from "@/lib/currency";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -70,9 +71,15 @@ export default async function CollectionPage({ searchParams }: {
             <p className="text-center text-xs text-muted-foreground">{collection.duplicates[card.editionId] ?? 1} exemplaire{(collection.duplicates[card.editionId] ?? 1) > 1 ? "s" : ""} de cette édition · <Link href={`/athletes/${card.athleteId}`} className="text-primary hover:underline">Voir la fiche</Link></p>
             {card.baseValue !== undefined && card.bankPrice !== undefined && <>
               <p className="text-center text-xs text-muted-foreground">Valeur : {formatCoins(BigInt(card.baseValue))} · Rachat banque : {formatCoins(BigInt(card.bankPrice))}</p>
-              {BigInt(card.bankPrice) > BigInt(0)
-                ? <SellToBankButton cardInstanceId={card.instanceId} cardLabel={`${card.name}, ${card.editionName}`} priceLabel={formatCoins(BigInt(card.bankPrice))} />
-                : <p className="text-center text-xs text-muted-foreground">Pas encore de valeur de rachat</p>}
+              {card.listing
+                ? <><p className="text-center text-xs font-medium text-primary">En vente sur le marché : {formatCoins(BigInt(card.listing.price))}</p>
+                    <CancelListingButton listingId={card.listing.id} cardLabel={`${card.name}, ${card.editionName}`} /></>
+                : <div className="flex flex-col items-center gap-2">
+                    {BigInt(card.bankPrice) > BigInt(0)
+                      ? <SellToBankButton cardInstanceId={card.instanceId} cardLabel={`${card.name}, ${card.editionName}`} priceLabel={formatCoins(BigInt(card.bankPrice))} />
+                      : <p className="text-center text-xs text-muted-foreground">Pas encore de valeur de rachat</p>}
+                    <ListForSaleForm cardInstanceId={card.instanceId} cardLabel={`${card.name}, ${card.editionName}`} suggestedPrice={card.baseValue} />
+                  </div>}
             </>}
           </div>)}
     </div>

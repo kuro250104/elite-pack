@@ -81,6 +81,8 @@ async function listOwned(actorId: string, params: CollectionQuery, client: Prism
   const ordered = rows.flatMap((row) => byId.get(row.id) ?? []);
   const duplicates = await client.cardInstance.groupBy({ by: ["editionId"], _count: { _all: true },
     where: { ownerId: actorId, retiredAt: null, editionId: { in: ordered.map((card) => card.editionId) } } });
+  const listings = new Map((await client.marketplaceListing.findMany({ where: { status: "ACTIVE", cardInstanceId: { in: ordered.map((card) => card.id) } },
+    select: { id: true, cardInstanceId: true, price: true } })).map((listing) => [listing.cardInstanceId, { id: listing.id, price: String(listing.price) }]));
   const cards: CardView[] = ordered.map((card) => ({
     instanceId: card.id, editionId: card.editionId, athleteId: card.edition.athleteId, name: card.edition.athlete.name,
     sport: card.edition.athlete.sport.nameFr, rarity: card.edition.rarity, editionName: card.edition.name,
@@ -88,6 +90,7 @@ async function listOwned(actorId: string, params: CollectionQuery, client: Prism
     prestigeScore: card.edition.athlete.prestigeOverride ?? card.edition.athlete.prestigeScore,
     serialNumber: card.serialNumber, maxSupply: card.edition.maxSupply, acquiredAt: card.acquiredAt.toISOString(),
     baseValue: String(card.edition.baseValue), bankPrice: String(bankResalePrice(card.edition.baseValue, bankResaleBasisPoints)),
+    listing: listings.get(card.id) ?? null,
   }));
   return { status: "owned" as const, cards, missing: [] as MissingCardView[], total: Number(count?.total ?? 0),
     page: params.page, pageSize: params.pageSize,
