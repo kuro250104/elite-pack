@@ -15,9 +15,11 @@ export async function requireApiAdmin() {
   return session.user;
 }
 export function assertSameOrigin(request: Request) {
-  const expected = new URL(process.env.AUTH_URL || request.url).origin;
+  // The configured public URL and the address actually served (127.0.0.1, LAN, other port) are both same-origin.
+  const allowed = new Set([new URL(request.url).origin]);
+  if (process.env.AUTH_URL) allowed.add(new URL(process.env.AUTH_URL).origin);
   const supplied = request.headers.get("origin");
-  if (!supplied || supplied !== expected) throw new ApiError("INVALID_ORIGIN", "L’origine de la requête n’est pas autorisée.", 403);
+  if (!supplied || !allowed.has(supplied)) throw new ApiError("INVALID_ORIGIN", "L’origine de la requête n’est pas autorisée.", 403);
 }
 export async function readJson<T>(request: Request, schema: z.ZodType<T>): Promise<T> {
   if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
@@ -56,5 +58,6 @@ export function failure(error: unknown) {
     : new ApiError("INTERNAL_ERROR", "Le service est temporairement indisponible.", 500);
   const headers: Record<string, string> = {"Cache-Control": "no-store"};
   if (safe.retryAfter !== undefined) headers["Retry-After"] = String(safe.retryAfter);
-  return Response.json({error: {code: safe.code, message: safe.message}}, {status: safe.status, headers});
+  return Response.json({error: {code: safe.code, message: safe.message, ...(safe.fields ? {fields: safe.fields} : {})}},
+    {status: safe.status, headers});
 }

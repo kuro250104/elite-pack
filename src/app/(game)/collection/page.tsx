@@ -13,7 +13,6 @@ import { formatCoins } from "@/lib/currency";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-const selectClass = "min-h-11 w-full min-w-0 rounded-md border bg-background px-3 text-sm";
 const sortLabels: Record<CollectionQuery["sort"], string> = {
   recent: "Date d’obtention", name: "Nom de l’athlète", rarity: "Rareté", prestige: "Prestige", value: "Valeur",
 };
@@ -55,11 +54,11 @@ export default async function CollectionPage({ searchParams }: {
     <form action="/collection" className="grid items-end gap-4 rounded-xl border bg-card p-5 sm:grid-cols-2 lg:grid-cols-4">
       <input type="hidden" name="status" value={query.status} />
       <div className="space-y-2"><label htmlFor="collection-query">Athlète</label><Input id="collection-query" name="query" defaultValue={query.query} maxLength={100} /></div>
-      <div className="space-y-2"><label htmlFor="collection-sport">Sport</label><select id="collection-sport" name="sportId" defaultValue={query.sportId ?? ""} className={selectClass}><option value="">Tous les sports</option>{sports.map((sport) => <option key={sport.id} value={sport.id}>{sport.nameFr}</option>)}</select></div>
-      <div className="space-y-2"><label htmlFor="collection-rarity">Rareté</label><select id="collection-rarity" name="rarity" defaultValue={query.rarity ?? ""} className={selectClass}><option value="">Toutes les raretés</option>{Object.entries(rarityPresentation).map(([key, value]) => <option key={key} value={key}>{value.name}</option>)}</select></div>
-      <div className="space-y-2"><label htmlFor="collection-sort">Trier par</label><select id="collection-sort" name="sort" defaultValue={query.sort} className={selectClass}>{Object.entries(sortLabels).map(([key, label]) => <option key={key} value={key}>{key === "recent" && missingView ? "Date de sortie" : label}</option>)}</select></div>
-      <div className="space-y-2"><label htmlFor="collection-country">Pays</label><select id="collection-country" name="country" defaultValue={query.country ?? ""} className={selectClass}><option value="">Tous les pays</option>{facets.countries.map((country) => <option key={country} value={country}>{country}</option>)}</select></div>
-      <div className="space-y-2"><label htmlFor="collection-team">Équipe</label><select id="collection-team" name="team" defaultValue={query.team ?? ""} className={selectClass}><option value="">Toutes les équipes</option>{facets.teams.map((team) => <option key={team} value={team}>{team}</option>)}</select></div>
+      <div className="space-y-2"><label htmlFor="collection-sport">Sport</label><select id="collection-sport" name="sportId" defaultValue={query.sportId ?? ""} className="field-select"><option value="">Tous les sports</option>{sports.map((sport) => <option key={sport.id} value={sport.id}>{sport.nameFr}</option>)}</select></div>
+      <div className="space-y-2"><label htmlFor="collection-rarity">Rareté</label><select id="collection-rarity" name="rarity" defaultValue={query.rarity ?? ""} className="field-select"><option value="">Toutes les raretés</option>{Object.entries(rarityPresentation).map(([key, value]) => <option key={key} value={key}>{value.name}</option>)}</select></div>
+      <div className="space-y-2"><label htmlFor="collection-sort">Trier par</label><select id="collection-sort" name="sort" defaultValue={query.sort} className="field-select">{Object.entries(sortLabels).map(([key, label]) => <option key={key} value={key}>{key === "recent" && missingView ? "Date de sortie" : label}</option>)}</select></div>
+      <div className="space-y-2"><label htmlFor="collection-country">Pays</label><select id="collection-country" name="country" defaultValue={query.country ?? ""} className="field-select"><option value="">Tous les pays</option>{facets.countries.map((country) => <option key={country} value={country}>{country}</option>)}</select></div>
+      <div className="space-y-2"><label htmlFor="collection-team">Équipe</label><select id="collection-team" name="team" defaultValue={query.team ?? ""} className="field-select"><option value="">Toutes les équipes</option>{facets.teams.map((team) => <option key={team} value={team}>{team}</option>)}</select></div>
       <Button type="submit">Filtrer</Button>
       <Link href={href(collectionQuerySchema.parse({ status: query.status }), {})} className="self-center text-sm text-primary hover:underline">Réinitialiser</Link>
     </form>
@@ -76,7 +75,9 @@ export default async function CollectionPage({ searchParams }: {
                 ? <><p className="text-center text-xs font-medium text-primary">En vente sur le marché : {formatCoins(BigInt(card.listing.price))}</p>
                     <CancelListingButton listingId={card.listing.id} cardLabel={`${card.name}, ${card.editionName}`} /></>
                 : <div className="flex flex-col items-center gap-2">
-                    <SellToBankButton cardInstanceId={card.instanceId} cardLabel={`${card.name}, ${card.editionName}`} priceLabel={formatCoins(BigInt(card.bankPrice))} />
+                    {BigInt(card.bankPrice) > BigInt(0)
+                      ? <SellToBankButton cardInstanceId={card.instanceId} cardLabel={`${card.name}, ${card.editionName}`} priceLabel={formatCoins(BigInt(card.bankPrice))} />
+                      : <p className="text-center text-xs text-muted-foreground">Pas encore de valeur de rachat</p>}
                     <ListForSaleForm cardInstanceId={card.instanceId} cardLabel={`${card.name}, ${card.editionName}`} suggestedPrice={card.baseValue} />
                   </div>}
             </>}
