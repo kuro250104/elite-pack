@@ -14,11 +14,11 @@ export function bankResalePrice(baseValue: bigint, basisPoints: number) {
 }
 
 /**
- * Recomputes CardEdition.baseValue for one sport or one athlete, inside the caller's transaction.
+ * Recomputes CardEdition.baseValue for one sport, one athlete or every edition, inside the caller's transaction.
  * Same formula as editionBaseValue, evaluated in SQL to avoid one query per edition.
  */
-export async function revalueEditions(tx: Prisma.TransactionClient, scope: { sportId: string } | { athleteId: string }) {
-  const filter = "sportId" in scope ? Prisma.sql`a."sportId" = ${scope.sportId}` : Prisma.sql`a.id = ${scope.athleteId}`;
+export async function revalueEditions(tx: Prisma.TransactionClient, scope: { sportId: string } | { athleteId: string } | "all") {
+  const filter = scope === "all" ? Prisma.sql`TRUE` : "sportId" in scope ? Prisma.sql`a."sportId" = ${scope.sportId}` : Prisma.sql`a.id = ${scope.athleteId}`;
   return tx.$executeRaw`
     UPDATE "CardEdition" e SET "baseValue" = v.value, "updatedAt" = clock_timestamp()
     FROM (
