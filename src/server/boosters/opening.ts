@@ -9,7 +9,8 @@ import { consumePassiveBooster } from "./passive";
 
 export const openBoosterSchema = z.object({
   boosterTypeId: z.string().min(1).max(200), sportId: z.string().min(1).max(200).optional(),
-  source: z.enum(["passive", "welcome"]), idempotencyKey: z.uuid(),
+  // "welcome" and "inventory" both consume the player's inventory of this booster type (gift or event purchase).
+  source: z.enum(["passive", "welcome", "inventory"]), idempotencyKey: z.uuid(),
 }).strict();
 export const openingRarities: readonly Rarity[] = ["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHIC"];
 export interface RarityWeight { rarity: Rarity; weightBasisPoints: number }
@@ -37,7 +38,7 @@ export interface OpenedCard {
   maxSupply: number | null; acquiredAt: string;
 }
 export interface BoosterOpeningResult {
-  openingId: string; replay: boolean; cards: OpenedCard[]; source: "passive" | "welcome";
+  openingId: string; replay: boolean; cards: OpenedCard[]; source: "passive" | "welcome" | "inventory";
 }
 const cardSelection = {
   id: true, editionId: true, serialNumber: true, acquiredAt: true,
@@ -45,7 +46,7 @@ const cardSelection = {
     id: true, name: true, nationality: true, prestigeScore: true, prestigeOverride: true, sport: { select: { nameFr: true } },
   } } } },
 } satisfies Prisma.CardInstanceSelect;
-async function openingResult(tx: Prisma.TransactionClient, id: string, source: "passive" | "welcome", replay: boolean): Promise<BoosterOpeningResult> {
+async function openingResult(tx: Prisma.TransactionClient, id: string, source: "passive" | "welcome" | "inventory", replay: boolean): Promise<BoosterOpeningResult> {
   const cards = await tx.cardInstance.findMany({ where: { openingId: id }, select: cardSelection, orderBy: [{ mintedAt: "asc" }, { id: "asc" }] });
   return { openingId: id, replay, source, cards: cards.map((card) => ({
     instanceId: card.id, editionId: card.editionId, athleteId: card.edition.athlete.id, name: card.edition.athlete.name,
@@ -83,7 +84,11 @@ export async function openBooster(actorId: string, input: unknown, client: Prism
     const [clock] = await tx.$queryRaw<Array<{ now: Date }>>`SELECT clock_timestamp() AS now`;
     if (!clock) throw new Error("Horloge PostgreSQL indisponible.");
     const now = clock.now;
-    if (!booster?.active || (booster.startsAt && booster.startsAt > now) || (booster.endsAt && booster.endsAt <= now)) {
+    if (!booster) throw new ApiError("BOOSTER_UNAVAILABLE", "Ce booster n’est pas disponible.", 409);
+    // Availability (active flag, event dates) gates acquiring a booster, not opening one the player already owns:
+    // a booster bought or offered before the end of an event stays openable afterwards. The free passive stock is
+    // not owned per booster type, so it still requires an available booster.
+    if (command.source === "passive" && (!booster.active || (booster.startsAt && booster.startsAt > now) || (booster.endsAt && booster.endsAt <= now))) {
       throw new ApiError("BOOSTER_UNAVAILABLE", "Ce booster n’est pas disponible.", 409);
     }
     // Free passive stock is generic: it never pays for a priced or event booster.
@@ -140,7 +145,7 @@ export async function openBooster(actorId: string, input: unknown, client: Prism
     if (command.source === "passive") await consumePassiveBooster(tx, actorId);
     else {
       const consumed = await tx.boosterInventory.updateMany({ where: { userId: actorId, boosterTypeId: booster.id, quantity: { gt: 0 } }, data: { quantity: { decrement: 1 } } });
-      if (consumed.count !== 1) throw new ApiError("BOOSTER_STOCK_EMPTY", "Aucun booster de bienvenue n’est disponible.", 409);
+      if (consumed.count !== 1) throw new ApiError("BOOSTER_STOCK_EMPTY", "Vous n’avez plus de booster de ce type.", 409);
     }
     for (let index = 0; index < booster.cardCount; index++) {
       const rarity = selectOpeningRarity(booster.weights);

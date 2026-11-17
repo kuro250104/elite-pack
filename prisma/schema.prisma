@@ -279,24 +279,26 @@ model PassiveBoosterState {
 }
 
 model BoosterType {
-  id          String                @id @default(cuid())
-  slug        String                @unique
-  nameFr      String
-  category    BoosterCategory
-  cardCount   Int                   @default(5)
-  price       BigInt                @default(0)
-  active      Boolean               @default(false)
-  startsAt    DateTime?             @db.Timestamptz(3)
-  endsAt      DateTime?             @db.Timestamptz(3)
-  season      String?
-  competition String?
-  createdAt   DateTime              @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime              @updatedAt @db.Timestamptz(3)
-  sports      BoosterSport[]
-  editions    BoosterEdition[]
-  weights     BoosterRarityWeight[]
-  inventory   BoosterInventory[]
-  openings    BoosterOpening[]
+  id           String                @id @default(cuid())
+  slug         String                @unique
+  nameFr       String
+  category     BoosterCategory
+  cardCount    Int                   @default(5)
+  price        BigInt                @default(0)
+  active       Boolean               @default(false)
+  startsAt     DateTime?             @db.Timestamptz(3)
+  endsAt       DateTime?             @db.Timestamptz(3)
+  season       String?
+  competition  String?
+  /// Event boosters only: purchases allowed per player during the event; null means unlimited.
+  maxPerPlayer Int?
+  createdAt    DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime              @updatedAt @db.Timestamptz(3)
+  sports       BoosterSport[]
+  editions     BoosterEdition[]
+  weights      BoosterRarityWeight[]
+  inventory    BoosterInventory[]
+  openings     BoosterOpening[]
 }
 
 model BoosterSport {
