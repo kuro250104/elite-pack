@@ -76,3 +76,16 @@ npm run prestige:recompute -- --actor-id ID_ADMIN --confirm
 ```
 
 Chaque sport est recalculé dans sa propre transaction et journalisé (`PRESTIGE_RECOMPUTE`). Les athlètes importés avant cette version n’ont pas de palmarès : réimportez-les pour le récupérer.
+
+## Synchronisation périodique
+
+Les athlètes liés à TheSportsDB sont rafraîchis par lots, les moins récemment synchronisés d’abord (`AthleteExternalId.importedAt` sert de date de dernière synchronisation). Chaque athlète passe par l’import habituel : une `ImportJob` journalisée, palmarès compris, et les corrections administratives (`administratorOverrides`) ne sont jamais écrasées. Chaque champ réellement modifié (ancien club, poste…) est conservé dans l’audit `ATHLETE_IMPORT_UPDATED`, sous `after.changes`, avec ses valeurs avant et après. Chaque lot est résumé par une entrée `ATHLETE_SYNC`.
+
+- **Quota** : un athlète coûte deux appels (fiche et palmarès), espacés de 2,1 s par le limiteur partagé. Un lot de 8 athlètes (valeur par défaut, 20 au plus) prend environ 40 secondes. Au premier refus du fournisseur (HTTP 429), le lot s’arrête pour laisser le quota se rétablir.
+- **Fraîcheur** : par défaut, seuls les athlètes non synchronisés depuis 24 heures sont repris.
+- **Déclenchement manuel** : page `/admin/synchronisation` (bouton « Synchroniser maintenant ») ou `npm run imports:sync -- --actor-id ID_ADMIN [--limit 8] [--older-than-hours 24]`.
+- **Tâche planifiée** : `vercel.json` appelle `GET /api/cron/sync-athletes` chaque nuit à 4 h (UTC). Les comptes Vercel Hobby n’autorisent qu’une exécution par jour ; un plan payant permet un rythme plus soutenu. La route exige deux variables d’environnement, à définir dans le déploiement (jamais dans le dépôt) :
+  - `CRON_SECRET` : au moins 16 caractères. Vercel l’envoie dans l’en-tête `Authorization: Bearer …`, comparé en temps constant ;
+  - `SYNC_ACTOR_ID` : identifiant d’un compte administrateur, auteur des imports et des entrées du journal.
+
+  Sans ces variables, la route répond 503. Un mauvais secret reçoit 401 sans lancer de lot. La réponse ne contient que des compteurs.

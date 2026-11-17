@@ -33,7 +33,7 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
       <ApprovedPortrait name={sheet.name} image={sheet.image} />
       <div className="min-w-0 space-y-6">
         <header><h1 className="text-3xl font-bold [overflow-wrap:anywhere]">{sheet.name}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{sheet.unlocked ? "Fiche débloquée" : "Fiche verrouillée"}</p></header>
+          <p className="mt-2 text-sm text-muted-foreground">{sheet.unlocked ? "Fiche débloquée" : "Fiche verrouillée"}{sheet.syncedAt ? ` · Données TheSportsDB du ${new Date(sheet.syncedAt).toLocaleDateString("fr-FR", { dateStyle: "long", timeZone: "Europe/Paris" })}` : ""}</p></header>
         <dl className="grid gap-4 sm:grid-cols-2">{identity.map(([label, value]) => <div key={label}><dt className="text-sm text-muted-foreground">{label}</dt><dd className="mt-1 [overflow-wrap:anywhere]">{value ?? "Non renseigné"}</dd></div>)}
           {sheet.details && <div><dt className="text-sm text-muted-foreground">Date de naissance</dt><dd className="mt-1">{sheet.details.birthDate
             ? new Date(`${sheet.details.birthDate}T00:00:00Z`).toLocaleDateString("fr-FR", { dateStyle: "long", timeZone: "UTC" }) : "Non renseignée"}</dd></div>}

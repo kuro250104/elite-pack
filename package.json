@@ -24,6 +24,7 @@
     "project:preview": "node --import tsx scripts/project/bootstrap.ts",
     "project:apply": "node --import tsx scripts/project/bootstrap.ts --apply",
     "imports:run": "node --conditions=react-server --import tsx scripts/imports/bootstrap.ts",
+    "imports:sync": "node --conditions=react-server --import tsx scripts/imports/sync.ts",
     "admin:grant-local": "node --conditions=react-server --import tsx scripts/admin/grant-local.ts",
     "game:prepare": "node --conditions=react-server --import tsx scripts/game/prepare.ts",
     "prestige:recompute": "node --conditions=react-server --import tsx scripts/prestige/recompute.ts",

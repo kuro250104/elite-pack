@@ -23,6 +23,7 @@ export default async function AdminPage() {
         <Button asChild variant="outline"><Link href="/admin/editions">Éditions de cartes</Link></Button>
         <Button asChild variant="outline"><Link href="/admin/evenements">Boosters événementiels</Link></Button>
         <Button asChild variant="outline"><Link href="/admin/imports">Imports et catalogue</Link></Button>
+        <Button asChild variant="outline"><Link href="/admin/synchronisation">Synchronisation des athlètes</Link></Button>
         <Button asChild variant="outline"><Link href="/admin/images">Droits des images</Link></Button>
       </div>
     </header>

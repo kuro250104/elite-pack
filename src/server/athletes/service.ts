@@ -17,6 +17,12 @@ async function lockAthlete(tx: Prisma.TransactionClient, id: string) {
   if (!athlete) throw new ApiError("ATHLETE_NOT_FOUND", "Athlète introuvable.", 404);
   return athlete;
 }
+/** JSON text with sorted object keys: PostgreSQL jsonb does not keep key order, so plain JSON.stringify would see false changes. */
+function canonical(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  if (value && typeof value === "object" && !(value instanceof Date)) return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical((value as Record<string, unknown>)[key])}`).join(",")}}`;
+  return JSON.stringify(value instanceof Date ? value.toISOString() : value);
+}
 function honoursJson(honours: NonNullable<ExternalAthlete["honours"]>): Prisma.InputJsonArray {
   return honours.map((honour) => ({ title: honour.title, year: honour.season, team: honour.team, honourId: honour.externalId }));
 }
@@ -43,6 +49,8 @@ export async function applyExternalAthlete(tx: Prisma.TransactionClient, externa
     throw new ApiError("IDENTITY_CONFLICT", "Cet identifiant est déjà lié à un autre athlète.", 409);
   }
   let athleteId = existingId?.athleteId ?? options.targetAthleteId;
+  // Field-level history of provider refreshes (former team, position…), kept in the audit log.
+  const changes: Prisma.JsonObject = {};
   const action: "created" | "updated" | "linked" = existingId ? "updated" : athleteId ? "linked" : "created";
   if (!athleteId) {
     const candidates = await tx.$queryRaw<{ id: string }[]>`
@@ -69,6 +77,11 @@ export async function applyExternalAthlete(tx: Prisma.TransactionClient, externa
     if (data.birthDate && !Object.hasOwn(protectedFields, "birthDate")) update.birthDate = new Date(`${data.birthDate}T00:00:00Z`);
     // Honours are refreshed only when they were fetched, so a provider outage never erases the stored list.
     if (data.honours && !Object.hasOwn(protectedFields, "achievements")) update.achievements = honoursJson(data.honours);
+    for (const [field, value] of Object.entries(update)) {
+      const previous = field === "birthDate" ? athlete.birthDate?.toISOString().slice(0, 10) ?? null : athlete[field as keyof typeof athlete];
+      const next = value instanceof Date ? value.toISOString().slice(0, 10) : value;
+      if (canonical(previous ?? null) !== canonical(next ?? null)) changes[field] = { before: (previous ?? null) as Prisma.JsonValue, after: (next ?? null) as Prisma.JsonValue };
+    }
     await tx.athlete.update({ where: { id: athleteId }, data: update });
   }
   await tx.athleteExternalId.upsert({ where: { provider_externalId: { provider, externalId: data.externalId } },
@@ -79,8 +92,8 @@ export async function applyExternalAthlete(tx: Prisma.TransactionClient, externa
     license: image.license, attribution: image.attribution, usageRestrictions: image.usageRestrictions, approvedForDisplay: false } });
   await tx.adminAuditLog.create({ data: { actorId: options.actorId, action: `ATHLETE_IMPORT_${action.toUpperCase()}`,
     entityType: "Athlete", entityId: athleteId, after: { provider, externalId: data.externalId, sportId,
-      manualLink: Boolean(options.targetAthleteId) } } });
-  return { athleteId, action };
+      manualLink: Boolean(options.targetAthleteId), changes } } });
+  return { athleteId, action, changed: Object.keys(changes) };
 }
 
 export async function updateAthlete(tx: Prisma.TransactionClient, id: string, patch: unknown, actorId: string) {
