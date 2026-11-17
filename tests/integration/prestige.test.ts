@@ -51,7 +51,7 @@ describe("Prestige calculé à partir du palmarès", () => {
     const few = await athlete(sport.id, 1);
     const many = await athlete(sport.id, 5, { prestigeOverride: 12 });
     const elsewhere = await athlete(otherSport.id, 5, { prestigeScore: 7 });
-    expect(await recomputeSportPrestige(tx, sport.id, admin.id)).toEqual({ sportId: sport.id, athletes: 3, changed: 3 });
+    expect(await recomputeSportPrestige(tx, sport.id, admin.id)).toEqual({ sportId: sport.id, athletes: 3, changed: 3, revalued: 0 });
     const scores = Object.fromEntries((await tx.athlete.findMany({ where: { id: { in: [none.id, few.id, many.id, elsewhere.id] } } }))
       .map((row) => [row.id, [row.prestigeScore, row.prestigeOverride]]));
     expect(scores).toEqual({ [none.id]: [0, null], [few.id]: [50, null], [many.id]: [83, 12], [elsewhere.id]: [7, null] });

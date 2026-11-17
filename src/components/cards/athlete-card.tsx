@@ -6,6 +6,8 @@ export type CardView = {
   instanceId: string; editionId: string; athleteId: string; name: string; sport: string;
   rarity: CardRarity; editionName: string; nationality: string | null; prestigeScore: number;
   serialNumber: number | null; maxSupply: number | null; acquiredAt: string;
+  /** Integer coins serialized as strings; present where the economy is shown (collection). */
+  baseValue?: string; bankPrice?: string;
 };
 export const rarityPresentation: Record<CardRarity, { name: string; className: string }> = {
   COMMON: { name: "Commune", className: "text-rarity-common border-rarity-common/50" },

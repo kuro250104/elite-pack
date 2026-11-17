@@ -4,6 +4,7 @@ import { db } from "@/lib/db/prisma";
 import { Prisma, type PrismaClient } from "@/generated/prisma/client";
 import type { CardRarity, CardView } from "@/components/cards/athlete-card";
 import { ApiError } from "@/lib/api/errors";
+import { bankResalePrice } from "@/server/economy/valuation";
 
 const rarity = z.enum(["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHIC"]);
 const text = z.string().trim().min(1).max(100);
@@ -75,6 +76,7 @@ async function listOwned(actorId: string, params: CollectionQuery, client: Prism
   ]);
   const instances = await client.cardInstance.findMany({ where: { id: { in: rows.map((row) => row.id) } },
     include: { edition: { include: { athlete: { include: { sport: true } } } } } });
+  const { bankResaleBasisPoints } = await client.gameConfiguration.findUniqueOrThrow({ where: { id: "default" }, select: { bankResaleBasisPoints: true } });
   const byId = new Map(instances.map((instance) => [instance.id, instance]));
   const ordered = rows.flatMap((row) => byId.get(row.id) ?? []);
   const duplicates = await client.cardInstance.groupBy({ by: ["editionId"], _count: { _all: true },
@@ -85,6 +87,7 @@ async function listOwned(actorId: string, params: CollectionQuery, client: Prism
     nationality: card.edition.athlete.nationality,
     prestigeScore: card.edition.athlete.prestigeOverride ?? card.edition.athlete.prestigeScore,
     serialNumber: card.serialNumber, maxSupply: card.edition.maxSupply, acquiredAt: card.acquiredAt.toISOString(),
+    baseValue: String(card.edition.baseValue), bankPrice: String(bankResalePrice(card.edition.baseValue, bankResaleBasisPoints)),
   }));
   return { status: "owned" as const, cards, missing: [] as MissingCardView[], total: Number(count?.total ?? 0),
     page: params.page, pageSize: params.pageSize,

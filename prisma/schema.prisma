@@ -262,6 +262,13 @@ model GameConfiguration {
   updatedAt              DateTime @updatedAt @db.Timestamptz(3)
 }
 
+/// Base value of each rarity, in integer coins. Edition value = baseValue × (100 + effective prestige) / 100.
+model RarityValue {
+  rarity    Rarity   @id
+  baseValue BigInt
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
 model PassiveBoosterState {
   userId           String    @id
   stock            Int       @default(0)
