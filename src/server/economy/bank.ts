@@ -34,6 +34,8 @@ export async function sellToBank(actorId: string, input: unknown, idempotencyKey
       throw new ApiError("CARD_LISTED", "Retirez d’abord cette carte du marché avant de la revendre à la banque.", 409);
     const { bankResaleBasisPoints } = await tx.gameConfiguration.findUniqueOrThrow({ where: { id: "default" }, select: { bankResaleBasisPoints: true } });
     const amount = bankResalePrice(card.baseValue, bankResaleBasisPoints);
+    // Never retire a card for nothing (edition not valued yet, or a 0 % buyback rate).
+    if (amount <= BigInt(0)) throw new ApiError("NO_RESALE_VALUE", "Cette carte n’a pas encore de valeur de rachat : elle ne peut pas être revendue pour l’instant.", 409);
     await tx.cardInstance.update({ where: { id: cardInstanceId }, data: { ownerId: null, retiredAt: new Date() } });
     const balance = wallet.balance + amount;
     await tx.wallet.update({ where: { userId: actorId }, data: { balance, lifetimeEarnings: { increment: amount } } });

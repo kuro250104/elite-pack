@@ -5,6 +5,7 @@ import { db } from "../../src/lib/db/prisma";
 import { ApiError } from "../../src/lib/api/errors";
 import { Rarity } from "../../src/generated/prisma/enums";
 import { assertAdminActor, updateSport } from "../../src/server/sports/service";
+import { revalueEditions } from "../../src/server/economy/valuation";
 
 config({ path: [".env.local", ".env"], quiet: true });
 const athleteReferences = ["34162098", "34157136"];
@@ -54,6 +55,8 @@ try {
         await tx.boosterEdition.upsert({ where: { boosterTypeId_editionId: { boosterTypeId: booster.id, editionId: edition.id } }, update: {}, create: { boosterTypeId: booster.id, editionId: edition.id } });
       }
     }
+    // New editions start at 0: give them their value now, otherwise a bank sale would pay nothing.
+    for (const athlete of athletes) await revalueEditions(tx, { athleteId: athlete.id });
     const effectiveWeights = await tx.boosterRarityWeight.findMany({ where: { boosterTypeId: booster.id } });
     if (effectiveWeights.length !== 6 || effectiveWeights.some(weight => weight.weightBasisPoints <= 0) || effectiveWeights.reduce((sum, weight) => sum + weight.weightBasisPoints, 0) !== 10_000) {
       throw new ApiError("INVALID_PROBABILITIES", "Les probabilités actuelles du booster sont invalides ; aucune valeur administrateur n’est remplacée.", 409);

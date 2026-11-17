@@ -7,7 +7,6 @@ import { GameNav } from "@/components/layout/game-nav";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-const selectClass = "min-h-11 w-full min-w-0 rounded-md border bg-background px-3 text-sm";
 
 function href(query: EncyclopediaQuery, page: number) {
   const params = new URLSearchParams();
@@ -33,8 +32,8 @@ export default async function EncyclopediaPage({ searchParams }: {
     </header>
     <form action="/athletes" className="grid items-end gap-4 rounded-xl border bg-card p-5 sm:grid-cols-2 lg:grid-cols-4">
       <div className="space-y-2"><label htmlFor="encyclopedia-query">Athlète</label><Input id="encyclopedia-query" name="query" defaultValue={query.query} maxLength={100} /></div>
-      <div className="space-y-2"><label htmlFor="encyclopedia-sport">Sport</label><select id="encyclopedia-sport" name="sportId" defaultValue={query.sportId ?? ""} className={selectClass}><option value="">Tous les sports</option>{sports.map((sport) => <option key={sport.id} value={sport.id}>{sport.nameFr}</option>)}</select></div>
-      <div className="space-y-2"><label htmlFor="encyclopedia-discovered">Fiches</label><select id="encyclopedia-discovered" name="discovered" defaultValue={query.discovered} className={selectClass}><option value="all">Toutes les fiches</option><option value="yes">Fiches débloquées</option><option value="no">Fiches verrouillées</option></select></div>
+      <div className="space-y-2"><label htmlFor="encyclopedia-sport">Sport</label><select id="encyclopedia-sport" name="sportId" defaultValue={query.sportId ?? ""} className="field-select"><option value="">Tous les sports</option>{sports.map((sport) => <option key={sport.id} value={sport.id}>{sport.nameFr}</option>)}</select></div>
+      <div className="space-y-2"><label htmlFor="encyclopedia-discovered">Fiches</label><select id="encyclopedia-discovered" name="discovered" defaultValue={query.discovered} className="field-select"><option value="all">Toutes les fiches</option><option value="yes">Fiches débloquées</option><option value="no">Fiches verrouillées</option></select></div>
       <Button type="submit">Rechercher</Button>
     </form>
     <ul id="encyclopedia-athletes" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
