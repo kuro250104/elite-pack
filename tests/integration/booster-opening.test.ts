@@ -144,14 +144,24 @@ describe("Ouverture sécurisée", () => {
     expect((await tx.passiveBoosterState.findUniqueOrThrow({ where: { userId: data.user.id } })).stock).toBe(2);
     expect(await tx.boosterOpening.count({ where: { userId: data.user.id } })).toBe(0);
   }));
-  it("respecte les dates d’événement sans consommer de stock", async () => isolated(async (tx, client) => {
+  it("refuse le stock gratuit hors des dates, sans consommer de stock", async () => isolated(async (tx, client) => {
     const data = await fixture(tx);
+    const passive = { ...data.command, source: "passive" as const };
     await tx.boosterType.update({ where: { id: data.booster.id }, data: { startsAt: new Date(Date.now() + 60000) } });
-    await expect(openBooster(data.user.id, data.command, client)).rejects.toMatchObject({ code: "BOOSTER_UNAVAILABLE" });
+    await expect(openBooster(data.user.id, passive, client)).rejects.toMatchObject({ code: "BOOSTER_UNAVAILABLE" });
     await tx.boosterType.update({ where: { id: data.booster.id }, data: { startsAt: null, endsAt: new Date(0) } });
-    await expect(openBooster(data.user.id, data.command, client)).rejects.toMatchObject({ code: "BOOSTER_UNAVAILABLE" });
+    await expect(openBooster(data.user.id, { ...passive, idempotencyKey: randomUUID() }, client)).rejects.toMatchObject({ code: "BOOSTER_UNAVAILABLE" });
+    await tx.boosterType.update({ where: { id: data.booster.id }, data: { endsAt: null, active: false } });
+    await expect(openBooster(data.user.id, { ...passive, idempotencyKey: randomUUID() }, client)).rejects.toMatchObject({ code: "BOOSTER_UNAVAILABLE" });
     expect(await tx.boosterOpening.count({ where: { userId: data.user.id } })).toBe(0);
-    expect((await tx.boosterInventory.findUniqueOrThrow({ where: { userId_boosterTypeId: { userId: data.user.id, boosterTypeId: data.booster.id } } })).quantity).toBe(1);
+    expect((await tx.passiveBoosterState.findUniqueOrThrow({ where: { userId: data.user.id } })).stock).toBe(2);
+  }));
+  it("ouvre un booster déjà possédé après la fin ou la désactivation de son événement", async () => isolated(async (tx, client) => {
+    const data = await fixture(tx);
+    await tx.boosterType.update({ where: { id: data.booster.id }, data: { endsAt: new Date(0), active: false } });
+    const result = await openBooster(data.user.id, data.command, client);
+    expect(result.cards.length).toBeGreaterThan(0);
+    expect((await tx.boosterInventory.findUniqueOrThrow({ where: { userId_boosterTypeId: { userId: data.user.id, boosterTypeId: data.booster.id } } })).quantity).toBe(0);
   }));
 
   it("sérialise les ouvertures simultanées identiques sans double consommation", async () => {

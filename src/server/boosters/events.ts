@@ -31,10 +31,13 @@ async function now(client: PrismaClient | Prisma.TransactionClient) {
   return clock!.now;
 }
 
-/** Ongoing and upcoming active events, with what this player already bought and still holds. */
+/** Events shown to the player, with what they already bought and still hold. */
 export async function listEvents(actorId: string, client: PrismaClient = db) {
   const at = await now(client);
-  const events = await client.boosterType.findMany({ where: { category: "EVENT", active: true, OR: [{ endsAt: null }, { endsAt: { gt: at } }] },
+  // Ongoing and upcoming active events, plus any event (ended or deactivated) where the player still has boosters to open.
+  const events = await client.boosterType.findMany({ where: { category: "EVENT", OR: [
+    { active: true, OR: [{ endsAt: null }, { endsAt: { gt: at } }] },
+    { inventory: { some: { userId: actorId, quantity: { gt: 0 } } } }] },
     orderBy: [{ startsAt: "asc" }, { id: "asc" }],
     include: { weights: true, sports: { include: { sport: { select: { id: true, nameFr: true, active: true } } } }, _count: { select: { editions: true } },
       inventory: { where: { userId: actorId }, select: { quantity: true } } } });
@@ -44,7 +47,8 @@ export async function listEvents(actorId: string, client: PrismaClient = db) {
   return { serverTime: at.toISOString(), events: events.map((event) => ({
     id: event.id, nameFr: event.nameFr, price: String(event.price), cardCount: event.cardCount, maxPerPlayer: event.maxPerPlayer,
     startsAt: event.startsAt?.toISOString() ?? null, endsAt: event.endsAt?.toISOString() ?? null,
-    status: event.startsAt && event.startsAt > at ? "upcoming" as const : "ongoing" as const,
+    status: !event.active || (event.endsAt && event.endsAt <= at) ? "ended" as const
+      : event.startsAt && event.startsAt > at ? "upcoming" as const : "ongoing" as const,
     season: event.season, competition: event.competition, restrictedEditions: event._count.editions,
     sports: event.sports.filter((row) => row.sport.active).map((row) => ({ id: row.sport.id, nameFr: row.sport.nameFr })),
     weights: Object.fromEntries(openingRarities.map((rarity) => [rarity, event.weights.find((weight) => weight.rarity === rarity)?.weightBasisPoints ?? 0])) as Record<Rarity, number>,
