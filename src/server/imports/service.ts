@@ -28,6 +28,18 @@ export function configuredProvider(client: PrismaClient = db): AthleteProvider {
 export async function reserveProviderRequest(client: PrismaClient = db) {
   await client.$transaction(tx => consumeRateLimit(tx, providerKey, {limit: 30, windowSeconds: 60, minIntervalMs: 2100}));
 }
+/** Retries a shared-quota reservation refused with a short Retry-After; longer waits are reported as failures. */
+export async function waitForProviderSlot(reserve: () => Promise<void>,
+  wait: (ms: number) => Promise<void> = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), maxWaitMs = 5_000) {
+  for (let attempt = 0; ; attempt++) {
+    try { return await reserve(); }
+    catch (error) {
+      const delay = error instanceof ApiError && error.status === 429 ? Math.max(1, error.retryAfter ?? 1) * 1000 : Infinity;
+      if (attempt >= 2 || delay > maxWaitMs) throw error;
+      await wait(delay);
+    }
+  }
+}
 export async function reserveAdminRequest(actorId: string, client: PrismaClient = db) {
   await client.$transaction(async tx => {
     await assertAdminActor(tx, actorId);
@@ -87,7 +99,8 @@ export async function runImport(actorId: string, key: string, command: ImportCom
     if (input.kind === "athlete" && !Array.isArray(data) && provider.capabilities.honours && provider.getHonours) {
       // Optional enrichment: a failed honours lookup keeps the stored list instead of failing the import.
       try {
-        await (dependencies.reserveProvider ? dependencies.reserveProvider() : reserveProviderRequest(client));
+        // The player lookup just used the shared slot (one call every 2.1 s): wait for the next one instead of failing.
+        await waitForProviderSlot(() => dependencies.reserveProvider ? dependencies.reserveProvider() : reserveProviderRequest(client));
         data.honours = await provider.getHonours(input.externalId);
       } catch { data.honours = undefined; }
     }
