@@ -84,7 +84,11 @@ export async function openBooster(actorId: string, input: unknown, client: Prism
     const [clock] = await tx.$queryRaw<Array<{ now: Date }>>`SELECT clock_timestamp() AS now`;
     if (!clock) throw new Error("Horloge PostgreSQL indisponible.");
     const now = clock.now;
-    if (!booster?.active || (booster.startsAt && booster.startsAt > now) || (booster.endsAt && booster.endsAt <= now)) {
+    if (!booster) throw new ApiError("BOOSTER_UNAVAILABLE", "Ce booster n’est pas disponible.", 409);
+    // Availability (active flag, event dates) gates acquiring a booster, not opening one the player already owns:
+    // a booster bought or offered before the end of an event stays openable afterwards. The free passive stock is
+    // not owned per booster type, so it still requires an available booster.
+    if (command.source === "passive" && (!booster.active || (booster.startsAt && booster.startsAt > now) || (booster.endsAt && booster.endsAt <= now))) {
       throw new ApiError("BOOSTER_UNAVAILABLE", "Ce booster n’est pas disponible.", 409);
     }
     // Free passive stock is generic: it never pays for a priced or event booster.

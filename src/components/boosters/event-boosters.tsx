@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 
 type EventView = {
   id: string; nameFr: string; price: string; cardCount: number; maxPerPlayer: number | null; startsAt: string | null; endsAt: string | null;
-  status: "upcoming" | "ongoing"; season: string | null; competition: string | null; sports: { id: string; nameFr: string }[];
+  status: "upcoming" | "ongoing" | "ended"; season: string | null; competition: string | null; sports: { id: string; nameFr: string }[];
   weights: Record<CardRarity, number>; purchased: number; available: number;
 };
 
@@ -38,7 +38,7 @@ function EventCard({ event, serverOffsetMs }: { event: EventView; serverOffsetMs
   // Keys are kept until success so a retried request is never charged or opened twice.
   const buyKey = useRef<string | null>(null);
   const openKey = useRef<string | null>(null);
-  const countdown = useCountdown(event.status === "upcoming" ? event.startsAt : event.endsAt, serverOffsetMs);
+  const countdown = useCountdown(event.status === "upcoming" ? event.startsAt : event.status === "ongoing" ? event.endsAt : null, serverOffsetMs);
   const price = Number(event.price);
   const limitReached = event.maxPerPlayer !== null && event.purchased >= event.maxPerPlayer;
   async function buy() {
@@ -61,6 +61,7 @@ function EventCard({ event, serverOffsetMs }: { event: EventView; serverOffsetMs
       <div className="min-w-0"><p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-rarity-legendary"><Sparkles className="size-4" aria-hidden="true" />Événement</p>
         <h3 id={`event-${event.id}`} className="mt-1 text-xl font-bold [overflow-wrap:anywhere]">{event.nameFr}</h3>
         <p className="text-sm text-muted-foreground">{[event.competition, event.season, event.sports.map((sport) => sport.nameFr).join(", ")].filter(Boolean).join(" · ")}</p></div>
+      {event.status === "ended" && <p className="text-sm font-medium text-muted-foreground">Événement terminé : vos boosters restent à ouvrir</p>}
       {countdown && <p className="flex items-center gap-2 text-sm" aria-live="off"><CalendarClock className="size-4" aria-hidden="true" />{event.status === "upcoming" ? "Commence dans" : "Se termine dans"} <span className="font-semibold tabular-nums">{countdown}</span></p>}
     </div>
     <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
@@ -71,10 +72,10 @@ function EventCard({ event, serverOffsetMs }: { event: EventView; serverOffsetMs
     </dl>
     <p className="text-xs text-muted-foreground">Probabilités : {(Object.keys(rarityPresentation) as CardRarity[]).filter((rarity) => event.weights[rarity] > 0)
       .map((rarity) => `${rarityPresentation[rarity].name} ${(event.weights[rarity] / 100).toLocaleString("fr-FR")} %`).join(" · ")}</p>
-    {event.status === "ongoing" && <div className="flex flex-wrap items-end gap-3">
+    {event.status !== "upcoming" && <div className="flex flex-wrap items-end gap-3">
       {event.sports.length > 1 && <div className="min-w-48 space-y-1"><label htmlFor={`event-sport-${event.id}`} className="text-sm">Sport (facultatif)</label>
         <select id={`event-sport-${event.id}`} value={sportId} onChange={(change) => setSportId(change.target.value)} className="field-select"><option value="">Tous les sports de l’événement</option>{event.sports.map((sport) => <option key={sport.id} value={sport.id}>{sport.nameFr}</option>)}</select></div>}
-      <Button onClick={() => void buy()} disabled={pending !== null || limitReached} variant="outline">{pending === "buy" ? "…" : limitReached ? "Limite atteinte" : price > 0 ? `Acheter (${price.toLocaleString("fr-FR")} pièce${price > 1 ? "s" : ""})` : "Récupérer gratuitement"}</Button>
+      {event.status === "ongoing" && <Button onClick={() => void buy()} disabled={pending !== null || limitReached} variant="outline">{pending === "buy" ? "…" : limitReached ? "Limite atteinte" : price > 0 ? `Acheter (${price.toLocaleString("fr-FR")} pièce${price > 1 ? "s" : ""})` : "Récupérer gratuitement"}</Button>}
       <Button onClick={() => void open()} disabled={pending !== null || event.available < 1}>{pending === "open" ? "Ouverture…" : "Ouvrir un booster de l’événement"}</Button>
     </div>}
     {message && <p role={message.failed ? "alert" : "status"} className={message.failed ? "text-sm text-destructive" : "text-sm text-primary"}>{message.text}</p>}
