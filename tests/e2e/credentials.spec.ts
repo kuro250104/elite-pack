@@ -83,3 +83,14 @@ test("inscription, connexion locale, droits et déconnexion sans GitHub",async({
     await prisma.$disconnect();
   }
 });
+
+test("sans JavaScript, les formulaires restent désactivés et n’envoient jamais le mot de passe dans l’URL", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  for (const [path, button] of [["/inscription", "Créer mon compte"], ["/connexion", "Se connecter"]] as const) {
+    await page.goto(path);
+    await expect(page.getByRole("button", { name: button, exact: true })).toBeDisabled();
+    await expect(page.locator("form").first()).toHaveAttribute("method", "post");
+  }
+  await context.close();
+});

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 type Field = "name" | "email" | "password" | "passwordConfirmation";
 type FieldErrors = Partial<Record<Field, string>>;
@@ -17,6 +18,8 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 export function RegisterForm() {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  // Disabled until hydrated: a native submit would put the password in the URL of a GET request.
+  const ready = useHydrated();
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const locked = useRef(false);
@@ -52,8 +55,8 @@ export function RegisterForm() {
   }
   const describedBy = (field: Field, help?: string) =>
     [help, fieldErrors[field] ? `register-${field}-error` : undefined].filter(Boolean).join(" ") || undefined;
-  return <form onSubmit={submit} className="min-w-0 space-y-4" aria-describedby="registration-feedback" noValidate>
-    <fieldset disabled={pending} className="min-w-0 space-y-4">
+  return <form method="post" onSubmit={submit} className="min-w-0 space-y-4" aria-describedby="registration-feedback" noValidate>
+    <fieldset disabled={pending || !ready} className="min-w-0 space-y-4">
       <legend className="sr-only">Inscription avec une adresse e-mail et un mot de passe</legend>
       <div className="space-y-2">
         <label htmlFor="register-name" className="text-sm font-medium">Nom affiché</label>
