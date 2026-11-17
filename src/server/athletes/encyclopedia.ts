@@ -73,7 +73,7 @@ export async function getAthleteSheet(actorId: string, athleteId: string, client
   await assertPlayer(client, actorId);
   if (!athleteId || athleteId.length > 100) throw new ApiError("ATHLETE_NOT_FOUND", "Athlète introuvable.", 404);
   const athlete = await client.athlete.findFirst({ where: { id: athleteId, active: true, sport: { active: true } },
-    include: { sport: { select: { id: true, nameFr: true } }, image: true,
+    include: { sport: { select: { id: true, nameFr: true } }, image: true, externalIds: { where: { provider: "THESPORTSDB" }, select: { importedAt: true } },
       editions: { orderBy: [{ rarity: "asc" }, { releaseDate: "asc" }],
         select: { id: true, name: true, rarity: true, active: true, maxSupply: true, mintedSupply: true, releaseDate: true,
           discoveries: { where: { userId: actorId }, select: { discoveredAt: true } },
@@ -89,6 +89,7 @@ export async function getAthleteSheet(actorId: string, athleteId: string, client
     id: athlete.id, name: athlete.name, sport: athlete.sport.nameFr, sportId: athlete.sport.id,
     nationality: athlete.nationality, currentTeam: athlete.currentTeam, position: athlete.position,
     prestigeScore: athlete.prestigeOverride ?? athlete.prestigeScore, image: displayableAthleteImage(athlete.image),
+    syncedAt: athlete.externalIds[0]?.importedAt.toISOString() ?? null,
     unlocked,
     // Detailed information is revealed once the player has discovered at least one edition.
     details: unlocked ? {

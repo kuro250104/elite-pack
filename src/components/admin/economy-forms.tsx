@@ -144,3 +144,24 @@ export function GrantBoostersForm() {
     <Feedback message={message} />
   </form>;
 }
+
+export function SyncNowForm() {
+  const [limit, setLimit] = useState("8");
+  const { pending, message, run } = useSubmit();
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (pending) return;
+    await run(async () => {
+      const result = await mutationRequest("/api/admin/sync", "POST", { limit: integer(limit), olderThanHours: 0 }) as
+        { data: { processed: number; updated: number; failed: number; stoppedByQuota: boolean } };
+      const { processed, updated, failed, stoppedByQuota } = result.data;
+      if (failed) throw new Error(`${processed} athlète(s) traité(s), ${failed} en échec${stoppedByQuota ? " : quota TheSportsDB atteint, réessayez dans une minute" : ""}.`);
+      return { processed, updated };
+    }, "Synchronisation terminée : consultez l’historique ci-dessous.");
+  }
+  return <form onSubmit={submit} className="flex flex-wrap items-end gap-4 rounded-xl border bg-card p-5" aria-label="Synchroniser maintenant">
+    <div className="space-y-1"><label htmlFor="sync-limit" className="text-sm font-medium">Athlètes à rafraîchir</label>
+      <Input id="sync-limit" value={limit} onChange={(event) => setLimit(event.target.value)} inputMode="numeric" className="w-32" disabled={pending} /></div>
+    <Button type="submit" disabled={pending || !(integer(limit) >= 1 && integer(limit) <= 20)}>{pending ? "Synchronisation… (≈ 5 s par athlète)" : "Synchroniser maintenant"}</Button>
+    <Feedback message={message} />
+  </form>;
+}
