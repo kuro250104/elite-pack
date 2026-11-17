@@ -11,7 +11,6 @@ type EventView = {
   status: "upcoming" | "ongoing"; season: string | null; competition: string | null; sports: { id: string; nameFr: string }[];
   weights: Record<CardRarity, number>; purchased: number; available: number;
 };
-const selectClass = "min-h-11 w-full min-w-0 rounded-md border bg-background px-3 text-sm";
 
 async function post(url: string, body: unknown, key: string) {
   const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify(body) });
@@ -74,7 +73,7 @@ function EventCard({ event, serverOffsetMs }: { event: EventView; serverOffsetMs
       .map((rarity) => `${rarityPresentation[rarity].name} ${(event.weights[rarity] / 100).toLocaleString("fr-FR")} %`).join(" · ")}</p>
     {event.status === "ongoing" && <div className="flex flex-wrap items-end gap-3">
       {event.sports.length > 1 && <div className="min-w-48 space-y-1"><label htmlFor={`event-sport-${event.id}`} className="text-sm">Sport (facultatif)</label>
-        <select id={`event-sport-${event.id}`} value={sportId} onChange={(change) => setSportId(change.target.value)} className={selectClass}><option value="">Tous les sports de l’événement</option>{event.sports.map((sport) => <option key={sport.id} value={sport.id}>{sport.nameFr}</option>)}</select></div>}
+        <select id={`event-sport-${event.id}`} value={sportId} onChange={(change) => setSportId(change.target.value)} className="field-select"><option value="">Tous les sports de l’événement</option>{event.sports.map((sport) => <option key={sport.id} value={sport.id}>{sport.nameFr}</option>)}</select></div>}
       <Button onClick={() => void buy()} disabled={pending !== null || limitReached} variant="outline">{pending === "buy" ? "…" : limitReached ? "Limite atteinte" : price > 0 ? `Acheter (${price.toLocaleString("fr-FR")} pièce${price > 1 ? "s" : ""})` : "Récupérer gratuitement"}</Button>
       <Button onClick={() => void open()} disabled={pending !== null || event.available < 1}>{pending === "open" ? "Ouverture…" : "Ouvrir un booster de l’événement"}</Button>
     </div>}
