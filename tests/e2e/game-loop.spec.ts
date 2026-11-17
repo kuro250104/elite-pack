@@ -96,6 +96,14 @@ test("booster de bienvenue : cinq cartes frappées par le serveur sont révélé
     await expect(page.getByText(`${owned.size} / 6 possédée${owned.size > 1 ? "s" : ""}`, { exact: true })).toBeVisible();
     await expect(page.getByText("Aucune biographie en français n’est disponible pour cet athlète.")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    // The sports page shows the fixture sport with the player's progress (owned editions out of six).
+    await page.goto("/sports");
+    const sportCard = page.locator("#sports-list li").filter({ hasText: `Discipline ${token}` });
+    await expect(sportCard).toContainText("1 athlète · 6 cartes à collectionner");
+    await expect(sportCard).toContainText(`${owned.size} / 6`);
+    await sportCard.getByRole("link").click();
+    await expect(page.getByRole("heading", { name: `Discipline ${token}`, level: 1 })).toBeVisible();
+    await expect(page.getByRole("link", { name: new RegExp(`Athlète de fixture ${token}`) })).toBeVisible();
     // The opening history keeps the five cards, linked to their athlete sheet.
     await page.goto("/boosters/historique");
     await expect(page.getByText("1 ouverture.", { exact: false })).toBeVisible();
