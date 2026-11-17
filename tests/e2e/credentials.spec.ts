@@ -15,7 +15,8 @@ test("inscription, connexion locale, droits et déconnexion sans GitHub",async({
     await page.getByLabel("Mot de passe",{exact:true}).fill(password);
     await page.getByLabel("Confirmer le mot de passe",{exact:true}).fill(password);
     await page.getByRole("button",{name:"Créer mon compte",exact:true}).click();
-    await expect(page).toHaveURL(/\/dashboard/);
+    // First visit compiles /dashboard in the dev server: slower in CI than the default 5 s.
+    await expect(page).toHaveURL(/\/dashboard/,{timeout:20_000});
     const user=await prisma.user.findUniqueOrThrow({where:{email},include:{wallet:{include:{transactions:true}},passiveBoosters:true}});
     expect(user.role).toBe("PLAYER");
     expect(user.passwordHash).not.toBe(password);

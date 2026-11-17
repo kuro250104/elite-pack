@@ -70,7 +70,9 @@ export default async function CollectionPage({ searchParams }: {
             <p className="text-center text-xs text-muted-foreground">{collection.duplicates[card.editionId] ?? 1} exemplaire{(collection.duplicates[card.editionId] ?? 1) > 1 ? "s" : ""} de cette édition · <Link href={`/athletes/${card.athleteId}`} className="text-primary hover:underline">Voir la fiche</Link></p>
             {card.baseValue !== undefined && card.bankPrice !== undefined && <>
               <p className="text-center text-xs text-muted-foreground">Valeur : {formatCoins(BigInt(card.baseValue))} · Rachat banque : {formatCoins(BigInt(card.bankPrice))}</p>
-              <SellToBankButton cardInstanceId={card.instanceId} cardLabel={`${card.name}, ${card.editionName}`} priceLabel={formatCoins(BigInt(card.bankPrice))} />
+              {BigInt(card.bankPrice) > BigInt(0)
+                ? <SellToBankButton cardInstanceId={card.instanceId} cardLabel={`${card.name}, ${card.editionName}`} priceLabel={formatCoins(BigInt(card.bankPrice))} />
+                : <p className="text-center text-xs text-muted-foreground">Pas encore de valeur de rachat</p>}
             </>}
           </div>)}
     </div>
