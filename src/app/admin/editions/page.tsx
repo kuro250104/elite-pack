@@ -9,7 +9,6 @@ import { EditionCreateForm, EditionForm } from "@/components/admin/edition-forms
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-const selectClass = "min-h-11 w-full min-w-0 rounded-md border bg-background px-3 text-sm";
 
 export default async function EditionsAdminPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await requireAdmin();
@@ -31,7 +30,7 @@ export default async function EditionsAdminPage({ searchParams }: { searchParams
 
     <form action="/admin/editions" className="grid items-end gap-4 rounded-xl border bg-card p-5 sm:grid-cols-[2fr_1fr_auto]">
       <div className="space-y-1"><label htmlFor="editions-query" className="text-sm font-medium">Athlète ou édition</label><Input id="editions-query" name="query" defaultValue={query.query} maxLength={100} /></div>
-      <div className="space-y-1"><label htmlFor="editions-rarity" className="text-sm font-medium">Rareté</label><select id="editions-rarity" name="rarity" defaultValue={query.rarity ?? ""} className={selectClass}><option value="">Toutes</option>{Object.entries(rarityPresentation).map(([key, value]) => <option key={key} value={key}>{value.name}</option>)}</select></div>
+      <div className="space-y-1"><label htmlFor="editions-rarity" className="text-sm font-medium">Rareté</label><select id="editions-rarity" name="rarity" defaultValue={query.rarity ?? ""} className="field-select"><option value="">Toutes</option>{Object.entries(rarityPresentation).map(([key, value]) => <option key={key} value={key}>{value.name}</option>)}</select></div>
       <Button type="submit">Rechercher</Button>
     </form>
 
