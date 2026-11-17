@@ -257,7 +257,7 @@ model GameConfiguration {
   id                     String   @id @default("default")
   passiveIntervalSeconds Int      @default(900)
   passiveMaxStock        Int      @default(10)
-  startingBalance        BigInt   @default(0)
+  startingBalance        BigInt   @default(500)
   bankResaleBasisPoints  Int      @default(6000)
   updatedAt              DateTime @updatedAt @db.Timestamptz(3)
 }
