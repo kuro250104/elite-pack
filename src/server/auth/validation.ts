@@ -1,13 +1,15 @@
 import { z } from "zod";
 
-const email = z.string().trim().toLowerCase().max(254).pipe(z.email());
-const password = z.string().min(12, "Le mot de passe doit contenir au moins 12 caractères.")
+const email = z.string("Indiquez votre adresse e-mail.").trim().toLowerCase()
+  .max(254, "L’adresse e-mail est trop longue.").pipe(z.email("Cette adresse e-mail n’est pas valide."));
+const password = z.string("Indiquez un mot de passe.").min(12, "Le mot de passe doit contenir au moins 12 caractères.")
   .max(128, "Le mot de passe doit contenir au maximum 128 caractères.");
 export const registrationSchema = z.object({
-  name: z.string().trim().min(2, "Indiquez votre nom.").max(80),
+  name: z.string("Indiquez votre nom.").trim().min(2, "Le nom doit contenir au moins 2 caractères.")
+    .max(80, "Le nom doit contenir au maximum 80 caractères."),
   email,
   password,
-  passwordConfirmation: z.string().min(12).max(128),
+  passwordConfirmation: z.string("Confirmez votre mot de passe.").max(128, "Le mot de passe doit contenir au maximum 128 caractères."),
 }).strict().refine((input) => input.password === input.passwordConfirmation, {
   message: "Les mots de passe doivent être identiques.", path: ["passwordConfirmation"],
 });

@@ -31,11 +31,14 @@ test("booster de bienvenue : cinq cartes frappées par le serveur sont révélé
       const athlete = await tx.athlete.create({ data: { name: `Athlète de fixture ${token}`, sportId, nationality: "France", prestigeScore: 50 } }); athleteId = athlete.id;
       await tx.boosterSport.create({ data: { boosterTypeId: "discovery-booster", sportId } });
       for (const rarity of rarities) {
-        const edition = await tx.cardEdition.create({ data: { athleteId, name: `Édition ${rarity}`, rarity, active: true, baseValue: 1000, releaseDate: new Date("2020-01-01T00:00:00Z") } });
+        const edition = await tx.cardEdition.create({ data: { athleteId, name: `Édition ${rarity}`, rarity, active: true, releaseDate: new Date("2020-01-01T00:00:00Z") } });
         editions.push(edition.id);
         await tx.boosterEdition.create({ data: { boosterTypeId: "discovery-booster", editionId: edition.id } });
       }
     });
+    // Values come from RarityValue and prestige, exactly as the migration backfill computes them (no forced amount).
+    await prisma.$executeRaw`UPDATE "CardEdition" e SET "baseValue" = rv."baseValue" * (100 + LEAST(100, GREATEST(0, COALESCE(a."prestigeOverride", a."prestigeScore")))) / 100
+      FROM "Athlete" a, "RarityValue" rv WHERE a.id = e."athleteId" AND rv.rarity = e.rarity AND e."athleteId" = ${athleteId}`;
     await page.context().addCookies([await sessionCookie(userId, baseURL!)]);
     await page.goto("/boosters");
     await page.getByLabel("Choisir un sport", { exact: true }).selectOption(sportId);
@@ -105,19 +108,23 @@ test("booster de bienvenue : cinq cartes frappées par le serveur sont révélé
     await page.goto("/boosters/historique");
     await expect(page.getByText("1 ouverture.", { exact: false })).toBeVisible();
     await expect(page.locator("ol > li").first().getByRole("link", { name: `Athlète de fixture ${token}` })).toHaveCount(5);
-    // Bank resale: the server prices the card (60 % of 1 000), retires it and credits the wallet shown in the header.
+    // Bank resale: the server prices the card (60 % of its computed value), retires it and credits the wallet shown in the header.
     await page.goto(`/collection?sportId=${sportId}`);
     // Target one card: its sell button turns into "Confirmer" / "Annuler" once clicked.
     const sold = page.locator("#collection-cards > div").first();
-    const confirmSale = sold.getByRole("button", { name: /^Confirmer la revente de .* pour 600 pièces$/ });
+    const sellButton = sold.getByRole("button", { name: /^Revendre .* à la banque pour .+$/ });
+    const label = await sellButton.getAttribute("aria-label");
+    const [, cardLabel, price] = label!.match(/^Revendre (.+) à la banque pour (.+)$/)!;
+    expect(Number(price!.replace(/\D/gu, ""))).toBeGreaterThan(0);
+    const confirmSale = sold.getByRole("button", { name: `Confirmer la revente de ${cardLabel} pour ${price}`, exact: true });
     // The button is server-rendered; retry until the client component has hydrated.
     await expect(async () => {
-      if (!await confirmSale.isVisible()) await sold.getByRole("button", { name: /^Revendre .* à la banque pour 600 pièces$/ }).click({ timeout: 2_000 });
+      if (!await confirmSale.isVisible()) await sellButton.click({ timeout: 2_000 });
       await expect(confirmSale).toBeVisible({ timeout: 1_000 });
     }).toPass({ timeout: 15_000 });
     await confirmSale.click();
     await expect(page.locator("#collection-cards article")).toHaveCount(4);
-    await expect(page.getByLabel("Solde : 600 pièces", { exact: true })).toBeVisible();
+    await expect(page.getByLabel(`Solde : ${price}`, { exact: true })).toBeVisible();
     expect(await prisma.walletTransaction.count({ where: { walletId: userId, type: "BANK_SALE" } })).toBe(1);
   } finally {
     await prisma.$transaction(async tx => {
