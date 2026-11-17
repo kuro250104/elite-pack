@@ -21,6 +21,7 @@ export default async function AdminPage() {
       <div className="flex flex-wrap gap-3">
         <Button asChild><Link href="/admin/economie">Règles économiques et boosters</Link></Button>
         <Button asChild variant="outline"><Link href="/admin/editions">Éditions de cartes</Link></Button>
+        <Button asChild variant="outline"><Link href="/admin/evenements">Boosters événementiels</Link></Button>
         <Button asChild variant="outline"><Link href="/admin/imports">Imports et catalogue</Link></Button>
         <Button asChild variant="outline"><Link href="/admin/images">Droits des images</Link></Button>
       </div>

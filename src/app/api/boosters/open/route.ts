@@ -2,7 +2,7 @@ import { z } from "zod";
 import { requireApiUser, assertSameOrigin, readJson, success, failure } from "@/lib/api/http";
 import { openBooster } from "@/server/boosters/opening";
 import { reserveGameRequest } from "@/server/game/api";
-const schema = z.object({ boosterTypeId: z.string().min(1).max(100), sportId: z.string().min(1).max(100).optional(), source: z.enum(["passive", "welcome"]) }).strict();
+const schema = z.object({ boosterTypeId: z.string().min(1).max(100), sportId: z.string().min(1).max(100).optional(), source: z.enum(["passive", "welcome", "inventory"]) }).strict();
 export async function POST(request: Request) { try {
     const actor = await requireApiUser();
     assertSameOrigin(request);
