@@ -53,7 +53,7 @@ describe("Comptes email transactionnels", () => {
     expect(wallet.transactions[0]).toMatchObject({ type: "INITIAL_BALANCE", amount: config.startingBalance, idempotencyKey: "initial-balance" });
     expect(await tx.passiveBoosterState.findUniqueOrThrow({ where: { userId: user.id } })).toMatchObject({ stock: 0 });
     expect((await tx.user.findUniqueOrThrow({ where: { id: user.id } })).passwordHash).toMatch(/^scrypt\$/u);
-    await expect(registerPlayer(input, client)).rejects.toMatchObject({ code: "REGISTRATION_UNAVAILABLE" });
+    await expect(registerPlayer(input, client)).rejects.toMatchObject({ code: "EMAIL_TAKEN", status: 409 });
     expect(await tx.user.count({ where: { email: input.email } })).toBe(1);
     expect(await tx.wallet.count({ where: { userId: user.id } })).toBe(1);
   }));
@@ -100,6 +100,18 @@ describe("Comptes email transactionnels", () => {
     expect(await tx.user.findUnique({ where: { email: input.email } })).toBeNull();
   }));
 
+  it("indique en français le champ invalide", async () => isolated(async (tx, client) => {
+    const input = payload();
+    await expect(registerPlayer({ ...input, email: "pas-une-adresse", password: "court", passwordConfirmation: "court" }, client))
+      .rejects.toMatchObject({ code: "INVALID_REGISTRATION", status: 400, fields: {
+        email: "Cette adresse e-mail n’est pas valide.",
+        password: "Le mot de passe doit contenir au moins 12 caractères.",
+      } });
+    await expect(registerPlayer({ ...input, passwordConfirmation: "autre mot de passe" }, client))
+      .rejects.toMatchObject({ fields: { passwordConfirmation: "Les mots de passe doivent être identiques." } });
+    expect(await tx.user.findUnique({ where: { email: input.email } })).toBeNull();
+  }));
+
   it("respecte les plafonds globaux de création et connexion", async () => isolated(async (tx, client) => {
     const input = payload();
     await tx.$executeRaw`INSERT INTO "RateLimitBucket" ("key","windowStart","count")
@@ -116,8 +128,8 @@ describe("Comptes email transactionnels", () => {
   it("limite les inscriptions à trois tentatives par email et heure", async () => isolated(async (tx, client) => {
     const input = payload();
     await registerPlayer(input, client);
-    await expect(registerPlayer(input, client)).rejects.toMatchObject({ code: "REGISTRATION_UNAVAILABLE" });
-    await expect(registerPlayer(input, client)).rejects.toMatchObject({ code: "REGISTRATION_UNAVAILABLE" });
+    await expect(registerPlayer(input, client)).rejects.toMatchObject({ code: "EMAIL_TAKEN", status: 409 });
+    await expect(registerPlayer(input, client)).rejects.toMatchObject({ code: "EMAIL_TAKEN", status: 409 });
     await expect(registerPlayer(input, client)).rejects.toMatchObject({ status: 429 });
     const digest = createHash("sha256").update(input.email).digest("hex");
     expect((await tx.rateLimitBucket.findUniqueOrThrow({ where: { key: `auth:register:email:${digest}` } })).count).toBe(3);
