@@ -26,11 +26,26 @@ async function reserveQuota(client: PrismaClient, action: "register" | "login", 
   });
 }
 
+const registrationFields = new Set(["name", "email", "password", "passwordConfirmation"]);
+function registrationFieldErrors(issues: { path: PropertyKey[]; message: string }[]) {
+  const fields: Record<string, string> = {};
+  for (const issue of issues) {
+    const field = String(issue.path[0] ?? "");
+    if (registrationFields.has(field) && !fields[field]) fields[field] = issue.message;
+  }
+  return fields;
+}
+
 export async function registerPlayer(input: unknown, client: PrismaClient = db): Promise<CredentialUser> {
   const parsed = registrationSchema.safeParse(input);
-  if (!parsed.success) throw new ApiError("INVALID_REGISTRATION", "Vérifiez les informations et la confirmation du mot de passe.", 400);
+  if (!parsed.success) {
+    throw new ApiError("INVALID_REGISTRATION", "Vérifiez les champs indiqués.", 400, undefined,
+      registrationFieldErrors(parsed.error.issues));
+  }
   const { name, email, password } = parsed.data;
   await reserveQuota(client, "register", email);
+  // Duplicate emails are reported explicitly: the game favours a clear signup over hiding registered addresses.
+  if (await client.user.findUnique({ where: { email }, select: { id: true } })) throw emailTaken();
   // Expensive work happens after quota reservation and outside the creation transaction.
   const passwordHash = await hashPassword(password);
   try {
@@ -38,11 +53,16 @@ export async function registerPlayer(input: unknown, client: PrismaClient = db):
       { id: "", name, email, emailVerified: null, image: null }, { passwordHash }));
     return { id: user.id, name: user.name, email, image: user.image, role: user.role };
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      throw new ApiError("REGISTRATION_UNAVAILABLE", "Impossible de créer le compte avec ces informations.", 409);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") throw emailTaken();
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      throw new ApiError("GAME_NOT_CONFIGURED", "Le jeu n’est pas encore configuré. Réessayez plus tard.", 503);
     }
     throw error;
   }
+}
+function emailTaken() {
+  return new ApiError("EMAIL_TAKEN", "Un compte existe déjà avec cette adresse e-mail.", 409, undefined,
+    { email: "Un compte existe déjà avec cette adresse e-mail." });
 }
 
 export async function authenticateCredentials(input: unknown, client: PrismaClient = db): Promise<CredentialUser | null> {
