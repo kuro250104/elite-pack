@@ -64,6 +64,15 @@ test("booster de bienvenue : cinq cartes frappées par le serveur sont révélé
     await expect(page.getByText(/Prochain booster : (\d{2}:\d{2}|Actualisation…)/)).toBeVisible();
     await page.setViewportSize({ width: 390, height: 844 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    // The five revealed cards appear in the collection, with the sport's progress and the missing editions.
+    const owned = new Set((await prisma.cardInstance.findMany({ where: { ownerId: userId }, select: { editionId: true } })).map(card => card.editionId));
+    await page.goto(`/collection?sportId=${sportId}`);
+    await expect(page.locator("#collection-cards article")).toHaveCount(5);
+    await expect(page.getByLabel(`Progression Discipline ${token} : ${Math.floor(owned.size / 6 * 100)} %`)).toBeVisible();
+    await page.getByRole("link", { name: "Cartes manquantes", exact: true }).click();
+    await expect(page).toHaveURL(/status=missing/);
+    await expect(page.locator("#collection-cards article")).toHaveCount(6 - owned.size);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   } finally {
     await prisma.$transaction(async tx => {
       if (userId) {
