@@ -5,12 +5,15 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 const failureMessage = "Connexion impossible. Vérifiez vos identifiants ou réessayez plus tard.";
 
 export function LoginForm({ initialError = false }: { initialError?: boolean }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  // Disabled until hydrated: a native submit would put the password in the URL of a GET request.
+  const ready = useHydrated();
   const [error, setError] = useState(initialError ? failureMessage : "");
   const locked = useRef(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -26,8 +29,8 @@ export function LoginForm({ initialError = false }: { initialError?: boolean }) 
     } catch { setError(failureMessage); }
     finally { locked.current = false; setPending(false); }
   }
-  return <form onSubmit={submit} className="min-w-0 space-y-4" aria-describedby="login-feedback">
-    <fieldset disabled={pending} className="min-w-0 space-y-4">
+  return <form method="post" onSubmit={submit} className="min-w-0 space-y-4" aria-describedby="login-feedback">
+    <fieldset disabled={pending || !ready} className="min-w-0 space-y-4">
       <legend className="sr-only">Connexion avec une adresse e-mail et un mot de passe</legend>
       <div className="space-y-2"><label htmlFor="login-email" className="text-sm font-medium">Adresse e-mail</label><Input id="login-email" name="email" type="email" autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false} maxLength={254} required /></div>
       <div className="space-y-2"><label htmlFor="login-password" className="text-sm font-medium">Mot de passe</label><Input id="login-password" name="password" type="password" autoComplete="current-password" minLength={12} maxLength={128} required /></div>

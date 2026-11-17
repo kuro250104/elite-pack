@@ -78,6 +78,14 @@ describe("Revente à la banque", () => {
     await expect(sellToBank(walletless.player.id, { cardInstanceId: walletless.mine.id }, randomUUID(), prisma)).rejects.toMatchObject({ code: "WALLET_NOT_FOUND" });
   });
 
+  it("refuse de retirer une carte dont la valeur de rachat est nulle", async () => {
+    const data = await fixture();
+    await prisma.cardEdition.update({ where: { id: data.edition.id }, data: { baseValue: 0 } });
+    await expect(sellToBank(data.player.id, { cardInstanceId: data.mine.id }, randomUUID(), prisma)).rejects.toMatchObject({ code: "NO_RESALE_VALUE", status: 409 });
+    expect(await prisma.cardInstance.findUniqueOrThrow({ where: { id: data.mine.id } })).toMatchObject({ ownerId: data.player.id, retiredAt: null });
+    expect(await prisma.walletTransaction.count({ where: { walletId: data.player.id } })).toBe(0);
+  });
+
   it("ne crédite qu’une seule fois une carte vendue deux fois en parallèle", async () => {
     const data = await fixture();
     const outcomes = await Promise.allSettled(Array.from({ length: 4 }, () =>

@@ -15,7 +15,8 @@ test("inscription, connexion locale, droits et déconnexion sans GitHub",async({
     await page.getByLabel("Mot de passe",{exact:true}).fill(password);
     await page.getByLabel("Confirmer le mot de passe",{exact:true}).fill(password);
     await page.getByRole("button",{name:"Créer mon compte",exact:true}).click();
-    await expect(page).toHaveURL(/\/connexion\?registered=1/);
+    // First visit compiles /dashboard in the dev server: slower in CI than the default 5 s.
+    await expect(page).toHaveURL(/\/dashboard/,{timeout:20_000});
     const user=await prisma.user.findUniqueOrThrow({where:{email},include:{wallet:{include:{transactions:true}},passiveBoosters:true}});
     expect(user.role).toBe("PLAYER");
     expect(user.passwordHash).not.toBe(password);
@@ -23,13 +24,23 @@ test("inscription, connexion locale, droits et déconnexion sans GitHub",async({
     expect(user.wallet?.transactions).toHaveLength(1);
     expect(user.passiveBoosters?.stock).toBe(0);
     const duplicate=await page.request.post("/api/auth/register",{headers:{origin:baseURL!},data:{name:"Autre",email,password,passwordConfirmation:password}});
-    expect(duplicate.status()).toBe(201);
-    expect((await duplicate.json()).data.message).toContain("La demande a été traitée");
+    expect(duplicate.status()).toBe(409);
+    expect((await duplicate.json()).error.fields.email).toBe("Un compte existe déjà avec cette adresse e-mail.");
     expect(await prisma.user.count({where:{email}})).toBe(1);
     const forgedRole=await page.request.post("/api/auth/register",{headers:{origin:baseURL!},data:{name:"Autre",email,password,passwordConfirmation:password,role:"ADMIN"}});
     expect(forgedRole.status()).toBe(400);
     const badOrigin=await page.request.post("/api/auth/register",{headers:{origin:"https://evil.invalid"},data:{name:"Autre",email,password,passwordConfirmation:password}});
     expect(badOrigin.status()).toBe(403);
+    await page.getByRole("button",{name:"Se déconnecter",exact:true}).click();
+    await expect(page).toHaveURL(`${baseURL}/`);
+    await page.goto("/inscription");
+    await page.getByLabel("Nom affiché",{exact:true}).fill("Joueur en double");
+    await page.getByLabel("Adresse e-mail",{exact:true}).fill(email);
+    await page.getByLabel("Mot de passe",{exact:true}).fill(password);
+    await page.getByLabel("Confirmer le mot de passe",{exact:true}).fill(password);
+    await page.getByRole("button",{name:"Créer mon compte",exact:true}).click();
+    await expect(page.getByText("Un compte existe déjà avec cette adresse e-mail.")).toBeVisible();
+    await page.goto("/connexion");
     await page.getByLabel("Adresse e-mail",{exact:true}).fill(email);
     await page.getByLabel("Mot de passe",{exact:true}).fill("Mot de passe incorrect");
     await page.getByRole("button",{name:"Se connecter",exact:true}).click();
@@ -72,4 +83,15 @@ test("inscription, connexion locale, droits et déconnexion sans GitHub",async({
     });
     await prisma.$disconnect();
   }
+});
+
+test("sans JavaScript, les formulaires restent désactivés et n’envoient jamais le mot de passe dans l’URL", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  for (const [path, button] of [["/inscription", "Créer mon compte"], ["/connexion", "Se connecter"]] as const) {
+    await page.goto(path);
+    await expect(page.getByRole("button", { name: button, exact: true })).toBeDisabled();
+    await expect(page.locator("form").first()).toHaveAttribute("method", "post");
+  }
+  await context.close();
 });

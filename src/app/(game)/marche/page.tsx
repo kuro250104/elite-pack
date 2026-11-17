@@ -11,7 +11,6 @@ import { GameNav } from "@/components/layout/game-nav";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-const selectClass = "min-h-11 w-full min-w-0 rounded-md border bg-background px-3 text-sm";
 type View = MarketplaceQuery["view"] | "history";
 
 function href(query: MarketplaceQuery, changes: Partial<MarketplaceQuery> & { view?: View }) {
@@ -60,9 +59,9 @@ export default async function MarketplacePage({ searchParams }: {
       <form action="/marche" className="grid items-end gap-4 rounded-xl border bg-card p-5 sm:grid-cols-2 lg:grid-cols-4">
         <input type="hidden" name="view" value={query.view} />
         <div className="space-y-2"><label htmlFor="market-query">Athlète</label><Input id="market-query" name="query" defaultValue={query.query} maxLength={100} /></div>
-        <div className="space-y-2"><label htmlFor="market-sport">Sport</label><select id="market-sport" name="sportId" defaultValue={query.sportId ?? ""} className={selectClass}><option value="">Tous les sports</option>{sports.map((sport) => <option key={sport.id} value={sport.id}>{sport.nameFr}</option>)}</select></div>
-        <div className="space-y-2"><label htmlFor="market-rarity">Rareté</label><select id="market-rarity" name="rarity" defaultValue={query.rarity ?? ""} className={selectClass}><option value="">Toutes les raretés</option>{Object.entries(rarityPresentation).map(([key, value]) => <option key={key} value={key}>{value.name}</option>)}</select></div>
-        <div className="space-y-2"><label htmlFor="market-sort">Trier par</label><select id="market-sort" name="sort" defaultValue={query.sort} className={selectClass}><option value="recent">Plus récentes</option><option value="price-asc">Prix croissant</option><option value="price-desc">Prix décroissant</option></select></div>
+        <div className="space-y-2"><label htmlFor="market-sport">Sport</label><select id="market-sport" name="sportId" defaultValue={query.sportId ?? ""} className="field-select"><option value="">Tous les sports</option>{sports.map((sport) => <option key={sport.id} value={sport.id}>{sport.nameFr}</option>)}</select></div>
+        <div className="space-y-2"><label htmlFor="market-rarity">Rareté</label><select id="market-rarity" name="rarity" defaultValue={query.rarity ?? ""} className="field-select"><option value="">Toutes les raretés</option>{Object.entries(rarityPresentation).map(([key, value]) => <option key={key} value={key}>{value.name}</option>)}</select></div>
+        <div className="space-y-2"><label htmlFor="market-sort">Trier par</label><select id="market-sort" name="sort" defaultValue={query.sort} className="field-select"><option value="recent">Plus récentes</option><option value="price-asc">Prix croissant</option><option value="price-desc">Prix décroissant</option></select></div>
         <div className="space-y-2"><label htmlFor="market-min">Prix minimum</label><Input id="market-min" name="minPrice" type="number" inputMode="numeric" min={1} step={1} defaultValue={query.minPrice} /></div>
         <div className="space-y-2"><label htmlFor="market-max">Prix maximum</label><Input id="market-max" name="maxPrice" type="number" inputMode="numeric" min={1} step={1} defaultValue={query.maxPrice} /></div>
         <Button type="submit">Filtrer</Button>
