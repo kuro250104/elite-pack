@@ -43,9 +43,9 @@ test("booster de bienvenue : cinq cartes frappées par le serveur sont révélé
     await page.goto("/boosters");
     await page.getByLabel("Choisir un sport", { exact: true }).selectOption(sportId);
     await expect(page.getByRole("button", { name: "Ouvrir un booster gratuit", exact: true })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Ouvrir mon booster de bienvenue", exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Ouvrir un booster offert", exact: true })).toBeDisabled();
     await page.getByRole("button", { name: "Récupérer mon booster de bienvenue", exact: true }).click();
-    const openButton = page.getByRole("button", { name: "Ouvrir mon booster de bienvenue", exact: true });
+    const openButton = page.getByRole("button", { name: "Ouvrir un booster offert", exact: true });
     await expect(openButton).toBeEnabled();
     const openingResponse = page.waitForResponse(response => response.url().endsWith("/api/boosters/open") && response.request().method() === "POST");
     await openButton.click();
@@ -96,6 +96,10 @@ test("booster de bienvenue : cinq cartes frappées par le serveur sont révélé
     await expect(page.getByText(`${owned.size} / 6 possédée${owned.size > 1 ? "s" : ""}`, { exact: true })).toBeVisible();
     await expect(page.getByText("Aucune biographie en français n’est disponible pour cet athlète.")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    // The opening history keeps the five cards, linked to their athlete sheet.
+    await page.goto("/boosters/historique");
+    await expect(page.getByText("1 ouverture.", { exact: false })).toBeVisible();
+    await expect(page.locator("ol > li").first().getByRole("link", { name: `Athlète de fixture ${token}` })).toHaveCount(5);
     // Bank resale: the server prices the card (60 % of its computed value), retires it and credits the wallet shown in the header.
     await page.goto(`/collection?sportId=${sportId}`);
     // Target one card: its sell button turns into "Confirmer" / "Annuler" once clicked.

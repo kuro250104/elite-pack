@@ -81,7 +81,7 @@ export async function updateBoosterSettings(tx: Prisma.TransactionClient, actorI
 
 const actionLabels: Record<string, string> = {
   ECONOMY_UPDATE: "Règles économiques modifiées", BOOSTER_SETTINGS_UPDATE: "Booster modifié", PRESTIGE_RECOMPUTE: "Prestige recalculé",
-  ATHLETE_UPDATE: "Athlète modifié", UPDATE_SPORT: "Sport modifié", EDITION_CREATE: "Édition créée", EDITION_UPDATE: "Édition modifiée",
+  ATHLETE_UPDATE: "Athlète modifié", BOOSTER_GRANT: "Boosters offerts à tous les joueurs", UPDATE_SPORT: "Sport modifié", EDITION_CREATE: "Édition créée", EDITION_UPDATE: "Édition modifiée",
 };
 /** Recent configuration changes for the admin history. */
 export async function recentAdminChanges(client: PrismaClient = db, actions = Object.keys(actionLabels), take = 20) {

@@ -116,3 +116,31 @@ export function BoosterSettingsForm({ booster }: { booster: { id: string; nameFr
     <Feedback message={message} />
   </form>;
 }
+
+export function GrantBoostersForm() {
+  const [quantity, setQuantity] = useState("10");
+  const [confirmed, setConfirmed] = useState(false);
+  const { pending, message, run } = useSubmit();
+  // One key per confirmed grant: a retried request after a network error never grants twice.
+  const [key, setKey] = useState<string | null>(null);
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (pending || !confirmed) return;
+    const grantKey = key ?? crypto.randomUUID();
+    setKey(grantKey);
+    await run(async () => {
+      const result = await mutationRequest("/api/admin/boosters/grants", "POST", { quantity: integer(quantity) }, grantKey) as { data?: { players?: number } };
+      setKey(null); setConfirmed(false);
+      return result;
+    }, `${integer(quantity).toLocaleString("fr-FR")} booster${integer(quantity) > 1 ? "s" : ""} offert${integer(quantity) > 1 ? "s" : ""} à tous les joueurs.`);
+  }
+  return <form onSubmit={submit} className="space-y-4 rounded-xl border bg-card p-5" aria-label="Offrir des boosters à tous les joueurs">
+    <fieldset disabled={pending} className="flex flex-wrap items-end gap-4">
+      <legend className="sr-only">Don de boosters</legend>
+      <div className="space-y-1"><label htmlFor="grant-quantity" className="text-sm font-medium">Boosters par joueur</label>
+        <Input id="grant-quantity" value={quantity} onChange={(event) => { setQuantity(event.target.value); setKey(null); }} inputMode="numeric" required className="w-32" /></div>
+      <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} className="size-4 accent-primary" />Je confirme le don à tous les joueurs</label>
+      <Button type="submit" disabled={pending || !confirmed || !(integer(quantity) >= 1)}>{pending ? "Envoi…" : "Offrir à tous les joueurs"}</Button>
+    </fieldset>
+    <Feedback message={message} />
+  </form>;
+}
