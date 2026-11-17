@@ -107,6 +107,20 @@ describe("Ouverture d’un booster événementiel", () => {
     await expect(openBooster(data.player.id, { boosterTypeId: data.event.id, source: "inventory", idempotencyKey: randomUUID() }, prisma)).rejects.toMatchObject({ code: "BOOSTER_STOCK_EMPTY" });
     await expect(openBooster(data.player.id, { boosterTypeId: data.event.id, source: "passive", idempotencyKey: randomUUID() }, prisma)).rejects.toMatchObject({ code: "PASSIVE_BOOSTER_NOT_ALLOWED" });
   });
+
+  it("garde ouvrable et visible un booster acheté quand l’événement se termine ou est désactivé", async () => {
+    const data = await fixture();
+    await purchaseEventBooster(data.player.id, data.event.id, randomUUID(), prisma);
+    await purchaseEventBooster(data.player.id, data.event.id, randomUUID(), prisma);
+    await prisma.boosterType.update({ where: { id: data.event.id }, data: { endsAt: new Date(Date.now() - 1000) } });
+    expect((await listEvents(data.player.id, prisma)).events.find((event) => event.id === data.event.id)).toMatchObject({ status: "ended", available: 2 });
+    await expect(purchaseEventBooster(data.player.id, data.event.id, randomUUID(), prisma)).rejects.toMatchObject({ code: "EVENT_UNAVAILABLE" });
+    expect((await openBooster(data.player.id, { boosterTypeId: data.event.id, source: "inventory", idempotencyKey: randomUUID() }, prisma)).cards).toHaveLength(5);
+    await prisma.boosterType.update({ where: { id: data.event.id }, data: { active: false } });
+    expect((await openBooster(data.player.id, { boosterTypeId: data.event.id, source: "inventory", idempotencyKey: randomUUID() }, prisma)).cards).toHaveLength(5);
+    // Nothing left to open: the ended event disappears from the player's list.
+    expect((await listEvents(data.player.id, prisma)).events.map((event) => event.id)).not.toContain(data.event.id);
+  });
 });
 
 describe("Administration des événements", () => {
