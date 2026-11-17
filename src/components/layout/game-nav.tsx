@@ -11,6 +11,7 @@ export async function GameNav() {
     <Link href="/dashboard" className="text-primary hover:underline">Tableau de bord</Link>
     <Link href="/boosters" className="text-primary hover:underline">Boosters</Link>
     <Link href="/collection" className="text-primary hover:underline">Collection</Link>
+    <Link href="/sports" className="text-primary hover:underline">Sports</Link>
     <Link href="/athletes" className="text-primary hover:underline">Athlètes</Link>
     <Link href="/marche" className="text-primary hover:underline">Marché</Link>
     <Link href="/profil" className="text-primary hover:underline">Mon profil</Link>
