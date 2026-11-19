@@ -1,30 +1,56 @@
 # Onboarding : bien démarrer sur Elite Pack
 
-Ce guide s’adresse à toute personne qui rejoint le projet : développeur, stagiaire ou relecteur. Il se suit dans l’ordre.
+Ce guide s’adresse à toute personne qui rejoint le projet : développeur, stagiaire ou relecteur. Il se suit dans l’ordre et il est corrigé après chaque stage ([ce qui a changé](#11-ce-que-les-stages-précédents-ont-changé)).
 
-> **Objectif de la première journée** : l’application tourne sur ton poste, les tests passent, tu as ouvert un booster dans ton navigateur et tu sais quel ticket prendre.
-> **Objectif de la deuxième séance** : ta première PR est ouverte.
+> **Objectif de la première heure** : l’application tourne sur ton poste et tu sais distinguer athlète, édition et exemplaire.
+> **Objectif de la première demi-journée** : tu as commité du code sur ton ticket, avec ton propre compte.
+> **Objectif de la journée** : ton ticket est fusionné, et ton carnet de passation permet à quelqu’un d’autre de reprendre ton travail.
 
 ## Sommaire
 
-1. [Avant d’arriver : accès et outils](#1-avant-darriver--accès-et-outils)
-2. [Jour 1 : installer et lancer le projet](#2-jour-1--installer-et-lancer-le-projet)
-3. [Comprendre le projet en 30 minutes](#3-comprendre-le-projet-en-30-minutes)
-4. [Glossaire](#4-glossaire)
-5. [Où écrire quoi dans le code](#5-où-écrire-quoi-dans-le-code)
-6. [Ta première contribution](#6-ta-première-contribution)
-7. [Dépannage](#7-dépannage)
-8. [Carnet de passation](#8-carnet-de-passation)
+1. [La méthode : comment on travaille ici](#1-la-méthode--comment-on-travaille-ici)
+2. [Avant d’arriver : accès et outils](#2-avant-darriver--accès-et-outils)
+3. [Jour 1 : installer et lancer le projet](#3-jour-1--installer-et-lancer-le-projet)
+4. [Comprendre le projet en 30 minutes](#4-comprendre-le-projet-en-30-minutes)
+5. [Glossaire](#5-glossaire)
+6. [Où écrire quoi dans le code](#6-où-écrire-quoi-dans-le-code)
+7. [Ta première contribution](#7-ta-première-contribution)
+8. [Stage d’une journée : déroulé](#8-stage-dune-journée--déroulé)
+9. [Dépannage](#9-dépannage)
+10. [Carnet de passation](#10-carnet-de-passation)
+11. [Ce que les stages précédents ont changé](#11-ce-que-les-stages-précédents-ont-changé)
 
 ---
 
-## 1. Avant d’arriver : accès et outils
+## 1. La méthode : comment on travaille ici
+
+**Les règles avant le code.** Lis les règles du projet ([AGENTS.md](../AGENTS.md), sections 6 à 11) avant d’ouvrir un fichier de code. La distinction la plus importante : un **athlète** (la personne réelle) n’est pas une **édition** (la carte collectionnable), qui n’est pas un **exemplaire** (la copie possédée par un joueur). Voir le [glossaire](#5-glossaire).
+
+**Quatre questions avant chaque tâche**, à noter dans le carnet de passation :
+
+| Question | Où trouver la réponse |
+| --- | --- |
+| 1. **Quel ticket ?** Quelle clé Jira, quels critères d’acceptation ? | Le ticket et ses sous-tâches dans Jira |
+| 2. **Où se trouve la logique métier ?** | Dans `src/server/<domaine>/`, jamais dans un composant ni dans une route API ([où écrire quoi](#6-où-écrire-quoi-dans-le-code)) |
+| 3. **Qu’est-ce qui peut casser ?** | Soldes, stocks, propriété d’une carte, droits, concurrence, migration de données |
+| 4. **Comment je le teste ?** | Unitaire (`tests/unit`), PostgreSQL (`tests/integration`) ou parcours (`tests/e2e`) |
+
+**Reformuler.** Quand le tuteur explique ou montre quelque chose, reformule-le en une phrase dans le carnet. Si tu n’y arrives pas, c’est le moment de poser la question.
+
+**Coder tôt.** Le nouvel arrivant tient le clavier dès la première demi-journée, même pour une petite partie du ticket. Le tuteur pose les questions et ne reprend le clavier que pour débloquer.
+
+**Le carnet de passation** est le premier document à ouvrir pour reprendre le projet : on le tient au fil de l’eau et on le relit ensemble à chaque point d’étape ([modèle](carnet-de-passation.md)).
+
+---
+
+## 2. Avant d’arriver : accès et outils
 
 | À obtenir | Auprès de | Pourquoi |
 | --- | --- | --- |
 | Accès collaborateur au [dépôt GitHub](https://github.com/kuro250104/elite-pack) | Propriétaire du dépôt (kuro250104) | Créer des branches et ouvrir des PR |
 | Accès au [board Jira SCRUM](https://lemeurvincent31.atlassian.net/jira/software/projects/SCRUM/boards/1/backlog) | Chef de projet Jira | Prendre et suivre ses tickets |
-| Un tuteur désigné | Équipe | Relire tes PR et répondre à tes questions |
+| Un tuteur désigné | Équipe | Relire tes PR, poser les questions, tenir le carnet avec toi |
+| Ton propre compte GitHub, configuré dans Git (`git config user.name` et `user.email`) | Toi | Ton travail est suivi par tes commits : ne jamais commiter avec le compte du tuteur |
 
 | Outil | Version | Vérification |
 | --- | --- | --- |
@@ -36,7 +62,7 @@ Ce guide s’adresse à toute personne qui rejoint le projet : développeur, sta
 
 ---
 
-## 2. Jour 1 : installer et lancer le projet
+## 3. Jour 1 : installer et lancer le projet
 
 Toutes les commandes se lancent à la racine du dépôt.
 
@@ -71,7 +97,10 @@ Dans `.env` :
 docker compose -p elite-pack-foundation up -d
 npm run db:deploy
 npm run db:seed
+npm run db:seed-demo
 ```
+
+`db:seed-demo` charge un catalogue jouable sans connexion réseau : deux sports, Kylian Mbappé et Lewis Hamilton (données TheSportsDB), et le booster **Découverte multisport** avec douze éditions. La commande refuse toute base qui n’est pas sur `localhost` et peut être relancée sans risque.
 
 ### Étape 4 : lancer l’application
 
@@ -81,7 +110,7 @@ npm run dev
 
 Ouvrir <http://localhost:3000>, créer un compte sur **/inscription**, puis aller sur **/boosters**.
 
-Pour ouvrir de vrais boosters, il faut un catalogue d’athlètes. Demande à ton tuteur le rôle ADMIN (`npm run admin:grant-local`, voir [l’authentification](authentication.md)), importe deux athlètes depuis **/admin/imports**, puis prépare le catalogue de démonstration ([boucle jouable](playable-loop.md)).
+Récupère le booster de bienvenue et ouvre-le : les cartes apparaissent dans **/collection**. Pour les pages d’administration, demande à ton tuteur le rôle ADMIN (`npm run admin:grant-local`, voir [l’authentification](authentication.md)).
 
 ### Étape 5 : vérifier que tout est vert
 
@@ -112,7 +141,7 @@ TEST_DATABASE_URL="$DATABASE_URL" npm run test:e2e
 
 ---
 
-## 3. Comprendre le projet en 30 minutes
+## 4. Comprendre le projet en 30 minutes
 
 Lis dans cet ordre :
 
@@ -131,7 +160,7 @@ Trois règles à retenir dès le premier jour :
 
 ---
 
-## 4. Glossaire
+## 5. Glossaire
 
 | Terme | Définition |
 | --- | --- |
@@ -148,7 +177,7 @@ Trois règles à retenir dès le premier jour :
 
 ---
 
-## 5. Où écrire quoi dans le code
+## 6. Où écrire quoi dans le code
 
 | Je dois… | Dossier | Exemple à suivre |
 | --- | --- | --- |
@@ -168,7 +197,7 @@ Deux garde-fous automatiques :
 
 ---
 
-## 6. Ta première contribution
+## 7. Ta première contribution
 
 1. Choisis un ticket **À faire** étiqueté `stagiaire` ou `good-first-issue` dans Jira, assigne-le-toi et passe-le **En cours**.
 2. Vérifie que le ticket est prêt : critères d’acceptation, sous-tâches Front et Back, points de départ.
@@ -183,13 +212,35 @@ Deux garde-fous automatiques :
 4. Commits courts au format `feat(collection): ajouter la liste de souhaits`.
 5. Avant de pousser : `npm run lint`, `npm run typecheck`, `npm test`, et les tests PostgreSQL ou E2E si ton ticket touche la base ou un parcours.
 6. Ouvre une PR vers `dev` avec la clé Jira dans le titre (`[SCRUM-88] Liste de souhaits`), remplis le modèle de PR et demande la relecture de ton tuteur.
-7. La CI doit être entièrement verte. Après fusion, passe le ticket **Terminé** une fois ses critères vérifiés.
+7. La CI doit être entièrement verte. Après fusion dans `dev`, le tuteur ouvre la PR de promotion `dev` → `main` : le travail du stagiaire arrive sur la branche principale le jour même.
+8. Passe le ticket **Terminé** une fois ses critères vérifiés, et complète le carnet.
 
 Le détail des règles de branches et de revue est dans [CONTRIBUTING.md](../CONTRIBUTING.md) et [le workflow](workflow.md).
 
 ---
 
-## 7. Dépannage
+## 8. Stage d’une journée : déroulé
+
+Pour un stage de 11 h à 17 h sur un ticket fullstack (par exemple [SCRUM-88](https://lemeurvincent31.atlassian.net/browse/SCRUM-88), la liste de souhaits). **Le ticket doit être fusionné le jour même** : si le temps manque, le tuteur termine sur la même branche, et le stagiaire garde ses commits.
+
+| Heure | Stagiaire (au clavier) | Tuteur | Point de contrôle |
+| --- | --- | --- | --- |
+| 11 h 00 | Accès, clone, `npm ci`, `.env`, base, `npm run dev` | Vérifie les accès GitHub et Jira, ouvre le carnet | L’application tourne |
+| 11 h 30 | Lit la méthode et le glossaire, répond aux quatre questions pour son ticket | Fait reformuler athlète, édition, exemplaire | Carnet : quatre réponses écrites |
+| 11 h 45 | Branche `feat/SCRUM-88-…`, modèle Prisma et migration | Pose les questions, notamment « qu’est-ce qui peut casser ? » | **Premier commit poussé** |
+| 12 h 30 | Pause | | |
+| 13 h 30 | Service et routes API, validation Zod, tests PostgreSQL | Relit au fil de l’eau | Tests back verts |
+| 14 h 45 | Point carnet (10 min) | Relit le carnet avec le stagiaire | Blocages notés, portée ajustée si besoin |
+| 15 h 00 | Interface (bouton, onglet), composants du design system | Vérifie les états erreur et vide | Parcours manuel réussi |
+| 16 h 00 | Test Playwright, `lint`, `typecheck`, PR vers `dev` | Revue de la PR | CI verte |
+| 16 h 40 | Corrections de revue | Fusion dans `dev`, puis promotion `dev` → `main` | **Travail sur `main`** |
+| 16 h 50 | Bilan dans le carnet | Bilan tuteur, tickets d’amélioration | Rapports joints au ticket Jira |
+
+Si la portée ne tient pas dans la journée, on retire d’abord les éléments marqués *bonus* dans le ticket, jamais les tests.
+
+---
+
+## 9. Dépannage
 
 | Symptôme | Cause probable | Solution |
 | --- | --- | --- |
@@ -202,30 +253,28 @@ Le détail des règles de branches et de revue est dans [CONTRIBUTING.md](../CON
 | `Executable doesn't exist` avec Playwright | Navigateur non installé | `npx playwright install chromium` |
 | Connexion impossible après inscription | `AUTH_SECRET` vide | Le renseigner, puis redémarrer `npm run dev` |
 | Pas de lien Administration | Compte sans rôle ADMIN | Voir [l’authentification](authentication.md) |
-| Aucun booster ouvrable | Catalogue vide | Importer des athlètes, puis suivre [la boucle jouable](playable-loop.md) |
+| Aucun booster ouvrable | Catalogue vide | `npm run db:seed-demo` (après `db:seed`) |
+| `MISSING_CONFIGURATION` ou `INVALID_PROBABILITIES` au chargement de la démo | `db:seed` non exécuté | `npm run db:seed`, puis `npm run db:seed-demo` |
 
 Bloqué plus de 30 minutes ? Écris ce que tu as essayé dans le carnet de passation et préviens ton tuteur.
 
 ---
 
-## 8. Carnet de passation
+## 10. Carnet de passation
 
-Chaque nouvel arrivant tient un carnet partagé avec son tuteur, **relu ensemble chaque fin de semaine**.
+Chaque nouvel arrivant tient un carnet partagé avec son tuteur, à partir du [modèle](carnet-de-passation.md). On le remplit au fil de l’eau et on le relit ensemble **à chaque point d’étape** : au milieu de la journée pour un stage court, chaque fin de semaine pour une arrivée plus longue.
 
-```markdown
-## Semaine du JJ/MM
+Il contient, pour chaque tâche, les réponses aux [quatre questions](#1-la-méthode--comment-on-travaille-ici), les reformulations, les blocages et les décisions. C’est le document à transmettre à la personne suivante. Chaque amélioration retenue devient un ticket Jira : c’est ainsi que ce guide reste à jour.
 
-### Fait
-- …
+---
 
-### Bloquant ou incompris
-- …
+## 11. Ce que les stages précédents ont changé
 
-### Questions ouvertes
-- …
-
-### Améliorations proposées pour ce guide
-- …
-```
-
-Chaque amélioration retenue devient un ticket Jira : c’est ainsi que ce guide reste à jour.
+| Retour du stage | Changement dans ce guide |
+| --- | --- |
+| Lire les règles du projet avant le code a été la clé | La méthode passe en tête du guide (section 1) |
+| Se poser les mêmes questions à chaque tâche structure le travail | Les quatre questions, notées dans le carnet pour chaque tâche |
+| Reformuler montre ce qui n’a pas été compris | Reformulation systématique dans le carnet |
+| Passer plus tôt au rôle de celui qui code | Premier commit attendu dès la première demi-journée ; le tuteur questionne au lieu de coder ([SCRUM-92](https://lemeurvincent31.atlassian.net/browse/SCRUM-92)) |
+| Faire régulièrement le point sur le carnet | Points carnet planifiés dans le déroulé, et modèle de carnet ([SCRUM-93](https://lemeurvincent31.atlassian.net/browse/SCRUM-93)) |
+| Le carnet est le premier document pour reprendre le projet | Le carnet devient un livrable de fin de stage, au même titre que la PR |

@@ -31,10 +31,11 @@ cp .env.example .env
 docker compose -p elite-pack-foundation up -d
 npm run db:deploy
 npm run db:seed
+npm run db:seed-demo   # catalogue jouable hors ligne : 2 athlètes, 12 éditions, 1 booster
 npm run dev
 ```
 
-L’application répond sur <http://localhost:3000>. Pour obtenir un catalogue jouable (rôle ADMIN, import d’athlètes, booster de démonstration), suivre l’[onboarding](docs/onboarding.md#étape-4--lancer-lapplication).
+L’application répond sur <http://localhost:3000>. Créer un compte sur `/inscription`, puis ouvrir le booster de bienvenue sur `/boosters`. Les étapes détaillées et le rôle ADMIN sont dans l’[onboarding](docs/onboarding.md#étape-4--lancer-lapplication).
 
 ### Pile complète en conteneurs
 

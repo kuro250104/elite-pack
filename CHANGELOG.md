@@ -5,6 +5,7 @@
 ### Ajouts
 
 - Gestion des erreurs (SCRUM-87) : identifiant `requestId` dans chaque erreur d’API (corps et en-tête `X-Request-Id`) ; erreurs Prisma et PostgreSQL traduites en 404, 409 ou 503 ; détail `debug` en développement uniquement ; journalisation structurée sans dépendance (JSON en production, `LOG_LEVEL`, secrets masqués) ; `onRequestError` pour les plantages de rendu ; `global-error.tsx` ; référence affichée au joueur pour les erreurs serveur ; page de démonstration `/demo/erreurs` ; documentation `docs/errors.md`.
+- Données de démonstration hors ligne (`npm run db:seed-demo`) : deux sports, deux athlètes TheSportsDB rejoués par les services d’import et booster Découverte multisport, en une commande idempotente réservée aux bases locales ; `game:prepare` partage désormais le même service.
 - Documentation de l’API : document OpenAPI 3.1 généré depuis les schémas Zod (`/api/openapi`), Swagger UI (`/api-docs`), masqués en production sauf `API_DOCS_ENABLED=true` ; un test vérifie que chaque route est documentée.
 - Documentation des composants avec Ladle 5.1.1 (`npm run ladle`) : cartes et raretés, collection, panneau des boosters, design system, en largeurs 800x600, mobile et bureau. Ladle embarque son propre Vite 6 ; un `override` maintient Vite 8 pour Vitest.
 - Sonde `GET /api/health` : 200 si l’application et PostgreSQL répondent, 503 sans détail technique sinon.
