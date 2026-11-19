@@ -20,6 +20,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
+    "db:seed-demo": "node --conditions=react-server --import tsx scripts/demo/seed.ts --confirm",
     "postinstall": "prisma generate",
     "project:preview": "node --import tsx scripts/project/bootstrap.ts",
     "project:apply": "node --import tsx scripts/project/bootstrap.ts --apply",
