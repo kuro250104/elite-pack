@@ -97,7 +97,10 @@ Dans `.env` :
 docker compose -p elite-pack-foundation up -d
 npm run db:deploy
 npm run db:seed
+npm run db:seed-demo
 ```
+
+`db:seed-demo` charge un catalogue jouable sans connexion réseau : deux sports, Kylian Mbappé et Lewis Hamilton (données TheSportsDB), et le booster **Découverte multisport** avec douze éditions. La commande refuse toute base qui n’est pas sur `localhost` et peut être relancée sans risque.
 
 ### Étape 4 : lancer l’application
 
@@ -107,7 +110,7 @@ npm run dev
 
 Ouvrir <http://localhost:3000>, créer un compte sur **/inscription**, puis aller sur **/boosters**.
 
-Pour ouvrir de vrais boosters, il faut un catalogue d’athlètes. Demande à ton tuteur le rôle ADMIN (`npm run admin:grant-local`, voir [l’authentification](authentication.md)), importe deux athlètes depuis **/admin/imports**, puis prépare le catalogue de démonstration ([boucle jouable](playable-loop.md)).
+Récupère le booster de bienvenue et ouvre-le : les cartes apparaissent dans **/collection**. Pour les pages d’administration, demande à ton tuteur le rôle ADMIN (`npm run admin:grant-local`, voir [l’authentification](authentication.md)).
 
 ### Étape 5 : vérifier que tout est vert
 
@@ -250,7 +253,8 @@ Si la portée ne tient pas dans la journée, on retire d’abord les éléments 
 | `Executable doesn't exist` avec Playwright | Navigateur non installé | `npx playwright install chromium` |
 | Connexion impossible après inscription | `AUTH_SECRET` vide | Le renseigner, puis redémarrer `npm run dev` |
 | Pas de lien Administration | Compte sans rôle ADMIN | Voir [l’authentification](authentication.md) |
-| Aucun booster ouvrable | Catalogue vide | Importer des athlètes, puis suivre [la boucle jouable](playable-loop.md) |
+| Aucun booster ouvrable | Catalogue vide | `npm run db:seed-demo` (après `db:seed`) |
+| `MISSING_CONFIGURATION` ou `INVALID_PROBABILITIES` au chargement de la démo | `db:seed` non exécuté | `npm run db:seed`, puis `npm run db:seed-demo` |
 
 Bloqué plus de 30 minutes ? Écris ce que tu as essayé dans le carnet de passation et préviens ton tuteur.
 
