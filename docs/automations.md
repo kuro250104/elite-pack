@@ -33,11 +33,15 @@ Le job agrégateur garde le nom **Lint, types, tests et compilation**, exigé pa
 
 En local, `compose.yaml` applique la même logique de dépendances avec le profil `app` : `postgres` (sain) → `migrate` (terminé avec succès) → `app` (sonde `/api/health`), chaque service ayant des limites de CPU et de mémoire.
 
+### Livraison et déploiement (CD)
+
+`.github/workflows/cd.yml` démarre **après** la CI (`workflow_run`), uniquement si elle a réussi sur un push vers `main`. Il publie les images `ghcr.io/kuro250104/elite-pack` et `…-migrate`, étiquetées `sha-<commit>`, version et `latest`, avec le seul `GITHUB_TOKEN`. Si la variable `DEPLOY_ENABLED` vaut `true`, il déploie ensuite sur le serveur de production via l’environnement GitHub `production` : migrations, remplacement de l’application, sonde `/api/health`, retour arrière automatique. Procédure et configuration : [déploiement](deploiement.md).
+
 ### Historique
 
 L’[exécution nº 37938740829](https://github.com/kuro250104/elite-pack/actions/runs/37938740829) a réussi sur `main` au commit `38c93b4` : **44 tests unitaires, 32 tests PostgreSQL et cinq parcours E2E**, ainsi que lint, typage et build.
 
-PostgreSQL 17 est un service éphémère du job. Le secret Auth.js de test est généré pour l’exécution, masqué dans les logs et transmis par l’environnement. Aucune clé TheSportsDB ou OAuth de production n’est fournie aux PR. Les fournisseurs sont testés avec des fixtures. La CI possède `contents: read`, ne conserve pas les credentials Git et annule l’ancienne exécution d’une même branche. Aucun déploiement n’est automatique.
+PostgreSQL 17 est un service éphémère du job. Le secret Auth.js de test est généré pour l’exécution, masqué dans les logs et transmis par l’environnement. Aucune clé TheSportsDB ou OAuth de production n’est fournie aux PR. Les fournisseurs sont testés avec des fixtures. La CI possède `contents: read`, ne conserve pas les credentials Git et annule l’ancienne exécution d’une même branche. Le déploiement est séparé de la CI (voir ci-dessus).
 
 Le job **Lint, types, tests et compilation** est obligatoire dans les rulesets de `main` et `dev`. `.github/workflows/branch-policy.yml` ajoute le contrôle **Origine de la PR vers main**, obligatoire sur `main` : il refuse toute PR vers `main` qui ne provient pas de `dev` ou d’une branche `hotfix/*`. Ces contrôles ne protègent les branches que parce que les rulesets distants les exigent.
 

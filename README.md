@@ -55,6 +55,7 @@ Compose démarre PostgreSQL, attend qu’il soit sain, applique les migrations d
 | Authentification et rôle ADMIN | [authentification](docs/authentication.md) |
 | Imports TheSportsDB et droits des images | [imports](docs/imports.md) · [droits des images](docs/images-rights.md) |
 | CI, orchestration et automatisations | [automatisations](docs/automations.md) |
+| Mise en production, retour arrière, exploitation | [déploiement](docs/deploiement.md) |
 | Contribution, conventions, workflow | [CONTRIBUTING](CONTRIBUTING.md) · [GUIDELINES](GUIDELINES.md) · [workflow](docs/workflow.md) |
 
 La documentation de l’API est servie en développement et masquée en production, sauf si `API_DOCS_ENABLED=true`.
@@ -90,7 +91,7 @@ La CI GitHub Actions exécute ces étapes dans des jobs enchaînés (qualité, p
 ## Limites actuelles
 
 - **Gestion des erreurs** : le format d’erreur est unifié et sans détail technique, mais il n’existe pas encore de journalisation structurée ni de mode verbeux de développement ([SCRUM-87](https://lemeurvincent31.atlassian.net/browse/SCRUM-87)).
-- **Déploiement** : aucun déploiement automatique n’est configuré ; l’image Docker est construite et vérifiée en CI, mais n’est pas publiée.
+- **Déploiement** : les images sont publiées automatiquement sur GHCR après chaque CI réussie sur `main`. Le déploiement sur le serveur est prêt, mais reste désactivé tant que l’administrateur n’a pas configuré le serveur et les secrets ([procédure](docs/deploiement.md)).
 - **Ouverture** : la révélation des cartes est simple ; l’animation progressive par rareté reste à faire (SCRUM-28).
 - **Données** : seule TheSportsDB est utilisée (décision d’équipe du 17/11/2026) ; la clé gratuite limite le palmarès à 5 titres par athlète. Les images restent masquées tant que leurs droits ne sont pas validés dans `/admin/images`.
 - **Connexion GitHub** : facultative, elle nécessite ses propres identifiants OAuth.
