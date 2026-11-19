@@ -57,6 +57,7 @@ Compose démarre PostgreSQL, attend qu’il soit sain, applique les migrations d
 | Imports TheSportsDB et droits des images | [imports](docs/imports.md) · [droits des images](docs/images-rights.md) |
 | Gestion des erreurs et journaux (mode DEV/PROD, démo `/demo/erreurs`) | [erreurs](docs/errors.md) |
 | CI, orchestration et automatisations | [automatisations](docs/automations.md) |
+| Mise en production, retour arrière, exploitation | [déploiement](docs/deploiement.md) |
 | Contribution, conventions, workflow | [CONTRIBUTING](CONTRIBUTING.md) · [GUIDELINES](GUIDELINES.md) · [workflow](docs/workflow.md) |
 
 La documentation de l’API est servie en développement et masquée en production, sauf si `API_DOCS_ENABLED=true`.

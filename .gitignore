@@ -16,3 +16,4 @@ next-env.d.ts
 
 # Build Ladle (documentation des composants).
 build-ladle/
+!deploy/.env.production.example

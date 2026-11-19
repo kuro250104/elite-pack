@@ -1,0 +1,133 @@
+name: Livraison et déploiement
+# Livraison continue : chaque commit de main validé par la CI est publié comme image Docker sur GHCR.
+# Déploiement continu : si DEPLOY_ENABLED=true, l'image est déployée sur le serveur de production
+# (environnement GitHub « production », approbation possible) puis vérifiée par /api/health.
+on:
+  workflow_run:
+    workflows: ["Vérifications du projet"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit, branche ou tag à livrer (main par défaut)"
+        required: false
+        default: main
+permissions:
+  contents: read
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
+jobs:
+  publication:
+    name: Publication des images (GHCR)
+    # Seulement après une CI réussie sur un push vers main (fusion d'une PR), ou à la demande.
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+      tag: ${{ steps.meta.outputs.tag }}
+      ref: ${{ steps.meta.outputs.ref }}
+    steps:
+      - name: Lire la version validée par la CI
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || inputs.ref }}
+          persist-credentials: false
+      - name: Calculer le nom et les étiquettes de l'image
+        id: meta
+        shell: bash
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          sha="$(git rev-parse HEAD)"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+          echo "tag=sha-${sha:0:12}" >> "$GITHUB_OUTPUT"
+          echo "ref=$sha" >> "$GITHUB_OUTPUT"
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Se connecter au registre GHCR
+        shell: bash
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: echo "$TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+      - name: Construire et publier les images
+        shell: bash
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          REVISION: ${{ steps.meta.outputs.ref }}
+        run: |
+          labels=(--label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}"
+                  --label "org.opencontainers.image.revision=$REVISION"
+                  --label "org.opencontainers.image.version=$VERSION")
+          docker build --target migrator "${labels[@]}" --tag "$IMAGE-migrate:$TAG" --tag "$IMAGE-migrate:latest" .
+          docker build --target runner "${labels[@]}" --tag "$IMAGE:$TAG" --tag "$IMAGE:$VERSION" --tag "$IMAGE:latest" .
+          docker push --all-tags "$IMAGE-migrate"
+          docker push --all-tags "$IMAGE"
+          {
+            echo "### Images publiées"
+            echo "- \`$IMAGE:$TAG\` (également \`$VERSION\` et \`latest\`)"
+            echo "- \`$IMAGE-migrate:$TAG\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploiement:
+    name: Déploiement en production
+    needs: publication
+    # Activé par l'administrateur du dépôt une fois le serveur prêt (docs/deploiement.md).
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+    steps:
+      - name: Lire les fichiers de déploiement de cette version
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.publication.outputs.ref }}
+          persist-credentials: false
+          sparse-checkout: deploy
+      - name: Préparer la connexion SSH
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
+      - name: Copier la configuration sur le serveur
+        shell: bash
+        env:
+          TARGET: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/elite-pack' }}
+        run: scp -i ~/.ssh/deploy_key deploy/compose.prod.yaml deploy/Caddyfile deploy/deploy.sh "$TARGET:$DEPLOY_PATH/"
+      - name: Déployer la version et vérifier sa santé (retour arrière automatique)
+        shell: bash
+        env:
+          TARGET: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/elite-pack' }}
+          IMAGE: ${{ needs.publication.outputs.image }}
+          TAG: ${{ needs.publication.outputs.tag }}
+        run: ssh -i ~/.ssh/deploy_key "$TARGET" "cd '$DEPLOY_PATH' && chmod +x deploy.sh && IMAGE='$IMAGE' TAG='$TAG' ./deploy.sh"
+      - name: Vérifier le service public
+        if: vars.PRODUCTION_URL != ''
+        shell: bash
+        env:
+          URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent --show-error "$URL/api/health"; then echo; echo "Production saine."; exit 0; fi
+            sleep 3
+          done
+          echo "::error::La production ne répond pas sur $URL/api/health."
+          exit 1
+      - name: Effacer la clé SSH
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
