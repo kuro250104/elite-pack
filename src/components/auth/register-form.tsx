@@ -4,6 +4,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { apiErrorMessage } from "@/lib/api/client-errors";
 import { Input } from "@/components/ui/input";
 import { useHydrated } from "@/hooks/use-hydrated";
 
@@ -43,7 +44,7 @@ export function RegisterForm() {
         const body = await response.json().catch(() => null) as { error?: { message?: string; fields?: FieldErrors } } | null;
         const reported = body?.error?.fields ?? {};
         setFieldErrors(reported);
-        if (Object.keys(reported).length === 0) setError(body?.error?.message ?? networkFailure);
+        if (Object.keys(reported).length === 0) setError(apiErrorMessage(body, response.status, networkFailure));
         return;
       }
       // The account exists at this point; a failed automatic sign-in falls back to the login page.

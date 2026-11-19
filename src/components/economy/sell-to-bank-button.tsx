@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { apiErrorMessage } from "@/lib/api/client-errors";
 
 /** Two-step confirmation; the server recomputes the price and the client never sends an amount. */
 export function SellToBankButton({ cardInstanceId, cardLabel, priceLabel }: { cardInstanceId: string; cardLabel: string; priceLabel: string }) {
@@ -19,7 +20,7 @@ export function SellToBankButton({ cardInstanceId, cardLabel, priceLabel }: { ca
       const response = await fetch("/api/bank/sales", { method: "POST",
         headers: { "Content-Type": "application/json", "Idempotency-Key": key.current }, body: JSON.stringify({ cardInstanceId }) });
       const body = await response.json().catch(() => null) as { error?: { message?: string } } | null;
-      if (!response.ok) { setMessage(body?.error?.message ?? "La vente a échoué. Réessayez."); key.current = null; setConfirming(false); return; }
+      if (!response.ok) { setMessage(apiErrorMessage(body, response.status, "La vente a échoué. Réessayez.")); key.current = null; setConfirming(false); return; }
       router.refresh();
     } catch { setMessage("Le serveur ne répond pas. Réessayez : la vente ne sera pas comptée deux fois."); }
     finally { setPending(false); }

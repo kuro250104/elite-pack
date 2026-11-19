@@ -3,6 +3,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { apiErrorMessage } from "@/lib/api/client-errors";
 import { Input } from "@/components/ui/input";
 
 const networkFailure = "Le serveur ne répond pas. Réessayez.";
@@ -10,7 +11,7 @@ const networkFailure = "Le serveur ne répond pas. Réessayez.";
 async function send(url: string, init: RequestInit) {
   const response = await fetch(url, { ...init, headers: { "Content-Type": "application/json", ...init.headers } });
   const body = await response.json().catch(() => null) as { error?: { message?: string } } | null;
-  return response.ok ? null : body?.error?.message ?? "L’opération a échoué. Réessayez.";
+  return response.ok ? null : apiErrorMessage(body, response.status, "L’opération a échoué. Réessayez.");
 }
 
 /** Price is a whole number of coins; the server validates it again and owns every balance. */

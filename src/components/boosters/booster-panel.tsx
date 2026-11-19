@@ -6,6 +6,7 @@ import { PackageOpen } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { apiErrorMessage } from "@/lib/api/client-errors";
 import { AthleteCard, rarityPresentation, type CardView, type CardRarity } from "@/components/cards/athlete-card";
 
 const passiveSchema = z.object({ stock: z.number().int().nonnegative(), maxStock: z.number().int().positive(), intervalSeconds: z.number().int().positive(), nextGenerationAt: z.string().nullable(), serverTime: z.string() });
@@ -23,8 +24,7 @@ async function request(url: string, body?: unknown, key?: string): Promise<unkno
   const response = await fetch(url, body === undefined ? { cache: "no-store" } : { method: "POST", headers: { "Content-Type": "application/json", ...(key ? { "Idempotency-Key": key } : {}) }, body: JSON.stringify(body) });
   const payload: unknown = await response.json();
   if (!response.ok) {
-    const error = z.object({ error: z.object({ message: z.string() }) }).safeParse(payload);
-    throw new ApiFailure(error.success ? error.data.error.message : "L’opération n’a pas abouti. Réessayez.", response.status < 500);
+    throw new ApiFailure(apiErrorMessage(payload, response.status, "L’opération n’a pas abouti. Réessayez."), response.status < 500);
   }
   return payload;
 }
