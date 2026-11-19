@@ -1,6 +1,8 @@
 # Contribuer à Elite Pack
 
-Elite Pack est un TCG multisport gratuit, entièrement en français. Le travail actuel porte sur le socle et les imports administratifs ; les ouvertures, la frappe et le marché ne sont pas encore implémentés. Lire [AGENTS.md](AGENTS.md), [les conventions](GUIDELINES.md) et [l’architecture](docs/architecture.md) avant de commencer.
+Elite Pack est un TCG multisport gratuit, entièrement en français. La boucle de jeu (boosters, collection, banque, marché, administration) est livrée ; le travail en cours est listé dans la [story map](docs/story-map.md). Lire [AGENTS.md](AGENTS.md), [les conventions](GUIDELINES.md) et [l’architecture](docs/architecture.md) avant de commencer.
+
+**Première contribution ?** Suivre d’abord le [guide d’onboarding](docs/onboarding.md) : accès, installation pas à pas, glossaire, dépannage et carnet de passation.
 
 ## Installer l’environnement
 
@@ -22,9 +24,7 @@ Les commandes reproductibles et limites de l’authentification sont détaillée
 
 ## Prendre un ticket
 
-Choisir un ticket `Ready` dans le projet GitHub, s’assigner et passer son statut à `In Progress`. Vérifier son EPIC parent, ses critères d’acceptation, ses dépendances et son estimation avant de modifier le code. Chaque EPIC doit avoir au moins un ticket frontend et un ticket backend. Le [workflow](docs/workflow.md) définit les champs et les critères de passage.
-
-La cible GitHub du projet doit être configurée avant ce parcours. Tant que le dépôt distant et le board ne sont pas créés, les fichiers locaux de préparation constituent un plan ; ils ne remplacent pas un outil de suivi utilisable.
+Choisir un ticket **À faire** dans le [board Jira SCRUM](https://lemeurvincent31.atlassian.net/jira/software/projects/SCRUM/boards/1/backlog), s’assigner et le passer **En cours**. Vérifier son EPIC parent, ses critères d’acceptation, ses sous-tâches Front et Back, ses dépendances et son estimation avant de modifier le code. Le [workflow](docs/workflow.md) définit les critères de passage (DoR/DoD). Les tickets EP01 à EP04 du GitHub Project nº 4 conservent l’historique du POC.
 
 ## Créer une branche et une PR
 
@@ -33,10 +33,10 @@ Le projet utilise deux branches permanentes protégées : `main` (version stable
 ```sh
 git switch dev
 git pull --ff-only
-git switch -c feat/EP02-02-import-athlete
+git switch -c feat/SCRUM-88-wishlist
 ```
 
-Préfixes : `feat/`, `fix/`, `docs/`, `test/` ou `chore/`. Le code `EP02-02` est l’identifiant stable du ticket ; l’issue GitHub garde son propre numéro. Utiliser un slug lisible en anglais, en minuscules avec tirets. Ouvrir une PR vers `dev` et lier l’issue avec `Closes #123`. Associer aussi la PR au board. Seules `dev` (PR de promotion) et `hotfix/*` peuvent ouvrir une PR vers `main`.
+Préfixes : `feat/`, `fix/`, `docs/`, `test/` ou `chore/`. La clé Jira (`SCRUM-88`) relie la branche, la PR et le ticket ; la reprendre dans le titre de la PR (`[SCRUM-88] Liste de souhaits`). Utiliser un slug lisible en anglais, en minuscules avec tirets. Ouvrir une PR vers `dev`. Seules `dev` (PR de promotion) et `hotfix/*` peuvent ouvrir une PR vers `main`.
 
 Une PR explique le problème, le résultat, les vérifications réellement exécutées et les risques. Ajouter une capture pour une modification visuelle et détailler toute migration. Le numéro GitHub doit être remplacé par celui de l’issue réelle, jamais laissé en exemple.
 
@@ -60,8 +60,14 @@ Pour un parcours utilisateur, installer Chromium avec `npx playwright install ch
 
 Relire les migrations SQL, conserver les CHECK et index personnalisés. Ne jamais réinitialiser une base partagée ou de production. Ajouter des tests pour les invariants critiques, avec tests réels PostgreSQL et concurrence quand pertinent.
 
+## Tenir la documentation à jour
+
+- **Nouvelle route API** : l’ajouter à `src/server/api-docs/openapi.ts` avec son schéma Zod. Sinon, le test `tests/unit/openapi.test.ts` échoue. Vérifier le rendu sur `/api-docs`.
+- **Nouveau composant ou nouvel état visuel** : ajouter une story `*.stories.tsx` à côté du composant et vérifier le rendu avec `npm run ladle`, notamment en 800x600 et sur mobile.
+- **Nouvelle variable d’environnement** : la documenter dans `.env.example`, et dans `compose.yaml` si l’application conteneurisée en a besoin.
+
 ## Finaliser
 
-Passer le ticket à `Review` lorsque la PR est prête et que les vérifications requises passent. Fusionner dans `dev` (squash) après revue et contrôles obligatoires. Le ticket passe à `Done` lorsque ses critères d’acceptation sont vérifiés et sa PR fusionnée dans `dev`. Supprimer la branche courte une fois fusionnée.
+Passer le ticket **En cours de revue** lorsque la PR est prête et que les vérifications requises passent. Fusionner dans `dev` (squash) après revue et contrôles obligatoires. Le ticket passe **Terminé** lorsque ses critères d’acceptation sont vérifiés et sa PR fusionnée dans `dev`. Supprimer la branche courte une fois fusionnée.
 
 Utiliser des commits tels que `feat(imports): preserve administrator overrides`, `fix(auth): reject unauthorized role updates` ou `docs(workflow): document review requirements`. Les textes de l’application et la documentation destinée à l’équipe restent en français.

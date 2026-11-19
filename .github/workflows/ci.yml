@@ -9,17 +9,66 @@ permissions:
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+  DATABASE_URL: postgresql://elite_pack@127.0.0.1:5432/elite_pack?schema=public
+  TEST_DATABASE_URL: postgresql://elite_pack@127.0.0.1:5432/elite_pack
+  AUTH_URL: http://127.0.0.1:3100
+
+# Orchestration : la qualité statique conditionne tout le reste ; les tests et compilations
+# indépendants tournent en parallèle ; les E2E attendent les tests unitaires et PostgreSQL.
+#
+#   qualite ─┬─ tests-unitaires ──┐
+#            ├─ tests-postgresql ─┴─ tests-e2e ─┐
+#            ├─ compilation ────────────────────┤
+#            ├─ documentation ──────────────────┼─ verification (contrôle obligatoire)
+#            └─ image-docker ───────────────────┘
 jobs:
-  verification:
-    name: Lint, types, tests et compilation
+  qualite:
+    name: Qualité (schéma, lint, types)
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    env:
-      CI: "true"
-      NEXT_TELEMETRY_DISABLED: "1"
-      DATABASE_URL: postgresql://elite_pack@127.0.0.1:5432/elite_pack?schema=public
-      TEST_DATABASE_URL: postgresql://elite_pack@127.0.0.1:5432/elite_pack
-      AUTH_URL: http://127.0.0.1:3100
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Installer les dépendances verrouillées
+        run: npm ci
+      - name: Vérifier le schéma Prisma
+        run: npm run db:validate
+      - name: Vérifier le style
+        run: npm run lint
+      - name: Vérifier les types
+        run: npm run typecheck
+
+  tests-unitaires:
+    name: Tests unitaires
+    needs: qualite
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Installer les dépendances verrouillées
+        run: npm ci
+      - name: Exécuter les tests unitaires (dont la synchronisation de la doc OpenAPI)
+        run: npm test
+
+  tests-postgresql:
+    name: Tests PostgreSQL
+    needs: qualite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:17
@@ -35,12 +84,46 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - name: Lire le dépôt
-        uses: actions/checkout@v7
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - name: Configurer Node.js 22
-        uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Installer les dépendances verrouillées
+        run: npm ci
+      - name: Appliquer les migrations sur la base éphémère
+        run: npm run db:deploy
+      - name: Initialiser la configuration de test
+        run: npm run db:seed
+      - name: Exécuter les tests PostgreSQL
+        run: npm run test:integration
+
+  tests-e2e:
+    name: Parcours navigateur (Playwright)
+    needs: [tests-unitaires, tests-postgresql]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: elite_pack
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: elite_pack
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U elite_pack -d elite_pack"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
@@ -52,25 +135,108 @@ jobs:
           test_auth_secret="$(openssl rand -base64 48)"
           echo "::add-mask::$test_auth_secret"
           echo "AUTH_SECRET=$test_auth_secret" >> "$GITHUB_ENV"
-      - name: Générer Prisma
-        run: npm run db:generate
-      - name: Vérifier le schéma Prisma
-        run: npm run db:validate
-      - name: Vérifier le style
-        run: npm run lint
-      - name: Vérifier les types
-        run: npm run typecheck
-      - name: Exécuter les tests unitaires
-        run: npm test
       - name: Appliquer les migrations sur la base éphémère
         run: npm run db:deploy
       - name: Initialiser la configuration de test
         run: npm run db:seed
-      - name: Exécuter les tests PostgreSQL
-        run: npm run test:integration
       - name: Installer Chromium et ses dépendances système
         run: npx playwright install --with-deps chromium
       - name: Exécuter les parcours navigateur
         run: npm run test:e2e
+      - name: Conserver le rapport en cas d'échec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-playwright
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  compilation:
+    name: Compilation de production
+    needs: qualite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Installer les dépendances verrouillées
+        run: npm ci
       - name: Compiler la version de production
         run: npm run build
+
+  documentation:
+    name: Documentation des composants (Ladle)
+    needs: qualite
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Installer les dépendances verrouillées
+        run: npm ci
+      - name: Construire la documentation Ladle
+        run: npm run ladle:build
+      - name: Publier la documentation comme artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-composants
+          path: build-ladle/
+          retention-days: 14
+
+  image-docker:
+    name: Image Docker de production
+    needs: qualite
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Construire l'image de migration
+        run: docker build --target migrator --tag elite-pack-migrate:ci .
+      - name: Construire l'image applicative
+        run: docker build --target runner --tag elite-pack:ci .
+      - name: Vérifier que l'image démarre et répond (503 attendu sans base)
+        shell: bash
+        run: |
+          docker run --detach --name elite-pack-ci --publish 3000:3000 \
+            --env DATABASE_URL=postgresql://nobody@127.0.0.1:1/none --env AUTH_SECRET="$(openssl rand -base64 32)" \
+            --memory 768m --cpus 1 elite-pack:ci
+          for attempt in $(seq 1 30); do
+            status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/api/health || true)"
+            if [ "$status" = "503" ] || [ "$status" = "200" ]; then echo "Sonde : HTTP $status"; break; fi
+            sleep 1
+          done
+          docker logs elite-pack-ci | tail -n 20
+          docker rm --force elite-pack-ci
+          [ "$status" = "503" ] || [ "$status" = "200" ]
+
+  verification:
+    # Nom conservé : c'est le contrôle exigé par les rulesets de main et dev.
+    name: Lint, types, tests et compilation
+    if: always()
+    needs: [qualite, tests-unitaires, tests-postgresql, tests-e2e, compilation, documentation, image-docker]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Vérifier le résultat de chaque étape
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          echo "$RESULTS" | jq -r 'to_entries[] | "\(.key) : \(.value.result)"'
+          if echo "$RESULTS" | jq -e 'to_entries | any(.value.result != "success")' > /dev/null; then
+            echo "::error::Au moins une étape de la CI n'a pas réussi."
+            exit 1
+          fi

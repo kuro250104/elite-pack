@@ -1,5 +1,20 @@
 # Historique des versions
 
+## Non publié
+
+### Ajouts
+
+- Documentation de l’API : document OpenAPI 3.1 généré depuis les schémas Zod (`/api/openapi`), Swagger UI (`/api-docs`), masqués en production sauf `API_DOCS_ENABLED=true` ; un test vérifie que chaque route est documentée.
+- Documentation des composants avec Ladle 5.1.1 (`npm run ladle`) : cartes et raretés, collection, panneau des boosters, design system, en largeurs 800x600, mobile et bureau. Ladle embarque son propre Vite 6 ; un `override` maintient Vite 8 pour Vitest.
+- Sonde `GET /api/health` : 200 si l’application et PostgreSQL répondent, 503 sans détail technique sinon.
+- Image Docker multi-étapes (migration et serveur standalone non root) et profil Compose `app` : dépendances `depends_on` sur l’état sain, sondes et limites de ressources.
+- CI découpée en jobs orchestrés par `needs`, avec limites de durée, build Ladle et vérification de l’image Docker.
+- Guide d’onboarding, personas, story map et import Jira des stories de la Road to MVP.
+
+### Migrations
+
+- Aucune.
+
 ## 0.1.0 — 2026-11-17
 
 ### Ajouts
