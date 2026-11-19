@@ -26,7 +26,8 @@ test("l’interface affiche le message de l’API et survit à un plantage JavaS
   await page.goto("/demo/erreurs");
   await expect(page.getByRole("heading", { name: "Gestion des erreurs" })).toBeVisible();
   await page.getByRole("button", { name: "Carte déjà vendue (409)" }).click();
-  await expect(page.getByRole("alert")).toHaveText("Cette carte vient d’être vendue.");
+  // Next.js adds its own role="alert" route announcer: target the alert carrying the API message.
+  await expect(page.getByRole("alert").filter({ hasText: "Cette carte vient d’être vendue." })).toBeVisible();
 
   await page.getByRole("button", { name: "Plantage JavaScript" }).click();
   await expect(page.getByRole("heading", { name: "Une erreur est survenue" })).toBeVisible();
