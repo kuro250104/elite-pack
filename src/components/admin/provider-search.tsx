@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
+import { apiErrorMessage } from "@/lib/api/client-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -25,10 +26,7 @@ export function ProviderSearch({ configured }: { configured: boolean }) {
     try {
       const response = await fetch(`/api/admin/imports/search?${new URLSearchParams({ query })}`, { cache: "no-store" });
       const payload: unknown = await response.json();
-      if (!response.ok) {
-        const error = z.object({ error: z.object({ message: z.string() }) }).safeParse(payload);
-        throw new Error(error.success ? error.data.error.message : "La recherche a échoué. Réessayez.");
-      }
+      if (!response.ok) throw new Error(apiErrorMessage(payload, response.status, "La recherche a échoué. Réessayez."));
       const parsed = searchResultSchema.safeParse(payload);
       if (!parsed.success) throw new Error("Le fournisseur a renvoyé une réponse inattendue.");
       setResults(parsed.data.data);

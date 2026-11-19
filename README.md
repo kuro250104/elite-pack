@@ -55,6 +55,7 @@ Compose démarre PostgreSQL, attend qu’il soit sain, applique les migrations d
 | Architecture et base de données | [architecture](docs/architecture.md) · [base](docs/database.md) |
 | Authentification et rôle ADMIN | [authentification](docs/authentication.md) |
 | Imports TheSportsDB et droits des images | [imports](docs/imports.md) · [droits des images](docs/images-rights.md) |
+| Gestion des erreurs et journaux (mode DEV/PROD, démo `/demo/erreurs`) | [erreurs](docs/errors.md) |
 | CI, orchestration et automatisations | [automatisations](docs/automations.md) |
 | Contribution, conventions, workflow | [CONTRIBUTING](CONTRIBUTING.md) · [GUIDELINES](GUIDELINES.md) · [workflow](docs/workflow.md) |
 
@@ -84,7 +85,7 @@ La CI GitHub Actions exécute ces étapes dans des jobs enchaînés (qualité, p
 - `src/server` : services métier transactionnels (boosters, cartes, collection, économie, marché, imports, administration).
 - `src/providers` : client TheSportsDB validé par Zod, avec quota partagé en base.
 - `src/components` : composants d’interface et leurs stories Ladle (`*.stories.tsx`).
-- `src/lib` : authentification Auth.js, accès Prisma, format des réponses et des erreurs d’API.
+- `src/lib` : authentification Auth.js, accès Prisma, format des réponses et des erreurs d’API, journalisation.
 - `prisma` : schéma, migrations et seed non destructif.
 - `tests` : unitaires (Vitest), PostgreSQL réels (concurrence, transactions) et parcours navigateur (Playwright).
 

@@ -65,6 +65,7 @@ Relire les migrations SQL, conserver les CHECK et index personnalisés. Ne jamai
 
 - **Nouvelle route API** : l’ajouter à `src/server/api-docs/openapi.ts` avec son schéma Zod. Sinon, le test `tests/unit/openapi.test.ts` échoue. Vérifier le rendu sur `/api-docs`.
 - **Nouveau composant ou nouvel état visuel** : ajouter une story `*.stories.tsx` à côté du composant et vérifier le rendu avec `npm run ladle`, notamment en 800x600 et sur mobile.
+- **Nouvelle erreur métier** : lever une `ApiError` avec un code stable et un message en français dans le service, et la répercuter dans le catalogue de [docs/errors.md](docs/errors.md). Ne jamais renvoyer un message technique au client.
 - **Nouvelle variable d’environnement** : la documenter dans `.env.example`, et dans `compose.yaml` si l’application conteneurisée en a besoin.
 
 ## Finaliser

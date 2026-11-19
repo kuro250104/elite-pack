@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CalendarClock, Sparkles } from "lucide-react";
 import { AthleteCard, rarityPresentation, type CardRarity, type CardView } from "@/components/cards/athlete-card";
 import { Button } from "@/components/ui/button";
+import { apiErrorMessage } from "@/lib/api/client-errors";
 
 type EventView = {
   id: string; nameFr: string; price: string; cardCount: number; maxPerPlayer: number | null; startsAt: string | null; endsAt: string | null;
@@ -15,7 +16,7 @@ type EventView = {
 async function post(url: string, body: unknown, key: string) {
   const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify(body) });
   const payload = await response.json().catch(() => null) as { data?: unknown; error?: { message?: string } } | null;
-  if (!response.ok) throw new Error(payload?.error?.message ?? "L’opération a échoué. Réessayez.");
+  if (!response.ok) throw new Error(apiErrorMessage(payload, response.status, "L’opération a échoué. Réessayez."));
   return payload?.data;
 }
 
