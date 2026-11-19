@@ -12,6 +12,11 @@ export const openBoosterSchema = z.object({
   // "welcome" and "inventory" both consume the player's inventory of this booster type (gift or event purchase).
   source: z.enum(["passive", "welcome", "inventory"]), idempotencyKey: z.uuid(),
 }).strict();
+/** Body of POST /api/boosters/open; the idempotency key travels in the Idempotency-Key header. */
+export const openBoosterRequestSchema = z.object({
+  boosterTypeId: z.string().min(1).max(100), sportId: z.string().min(1).max(100).optional(),
+  source: z.enum(["passive", "welcome", "inventory"]),
+}).strict();
 export const openingRarities: readonly Rarity[] = ["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHIC"];
 export interface RarityWeight { rarity: Rarity; weightBasisPoints: number }
 export function validateOpeningWeights(weights: readonly RarityWeight[], cardCount: number): void {
