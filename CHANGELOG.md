@@ -1,6 +1,6 @@
 # Historique des versions
 
-## Non publié
+## 0.2.0 — 2026-11-19
 
 ### Ajouts
 

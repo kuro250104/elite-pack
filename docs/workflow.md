@@ -86,7 +86,7 @@ La CI exécute les contrôles de qualité configurés à chaque PR et à chaque 
 
 ## Versions et releases
 
-La version actuelle est `0.1.0`. Une correction compatible incrémente le patch ; une fonctionnalité ou rupture documentée incrémente le minor pendant le POC. À partir de `1.0.0`, une rupture de contrat incrémentera le major. Tenir un changelog avec ajouts, corrections, sécurité, migrations et ruptures.
+La version actuelle est `0.2.0`. Une correction compatible incrémente le patch ; une fonctionnalité ou rupture documentée incrémente le minor pendant le POC. À partir de `1.0.0`, une rupture de contrat incrémentera le major. Tenir un changelog avec ajouts, corrections, sécurité, migrations et ruptures.
 
 Pour publier une release : PR de version vers `dev`, promotion `dev` → `main`, contrôles requis, tag annoté `vX.Y.Z` sur le commit vérifié, puis release GitHub avec notes et liens des tickets. Configurer un ruleset pour protéger `v*`. La publication est une action explicite, sans automatisme de déploiement ou publication de paquet. Le dépôt est marqué `private: true` dans `package.json`.
 
