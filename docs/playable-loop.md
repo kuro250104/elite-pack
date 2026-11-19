@@ -4,6 +4,10 @@ Le catalogue de démonstration repose sur deux athlètes réellement importés d
 
 ## Préparer la base locale
 
+**Raccourci hors ligne** : `npm run db:seed-demo` rejoue un instantané TheSportsDB des deux athlètes (pris le 19/11/2026) par les services d’import réels, avec l’opérateur technique `local-demo-operator`, puis exécute la même préparation que ci-dessous. Un athlète déjà importé n’est pas modifié. La commande refuse toute base qui n’est pas sur `localhost`.
+
+Préparation manuelle, après un import réel :
+
 La configuration du jeu et le modèle `multisport` doivent déjà avoir été initialisés par `npm run db:seed`. Les deux athlètes doivent être actifs et associés à deux sports distincts importés. L’opérateur doit disposer d’un identifiant ADMIN réel en base.
 
 ```sh
