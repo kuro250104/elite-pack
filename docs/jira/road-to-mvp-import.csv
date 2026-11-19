@@ -1,0 +1,297 @@
+Issue Id,Parent Id,Parent,Issue Type,Summary,Priority,Story point estimate,Labels,Labels,Labels,Description
+1,,,Epic,EPIC 9 — Gestion des erreurs,High,,error-management,fullstack,,"Feature imposée du TD « Road to MVP » : synchroniser front et back sur la gestion des erreurs, pour aider l'utilisateur (UX) et le développeur (debug).
+
+h3. Objectifs
+* Un format d'erreur unique entre l'API et l'interface
+* Un comportement distinct en mode DEV (erreurs verbeuses) et en mode PROD (informations critiques masquées)
+* Une solution de logs exploitable, avec un identifiant de corrélation par requête
+* Tous les cas couverts : appel API en erreur, crash JavaScript, page 404, erreur SQL/ORM, crash serveur
+
+h3. Existant
+* {{src/lib/api/errors.ts}} (ApiError) et {{src/lib/api/http.ts}} ({{failure()}}) renvoient déjà {{error: code, message, fields}}
+* {{src/app/error.tsx}} et {{src/app/not-found.tsx}} existent
+* Manques : aucune journalisation, aucune distinction DEV/PROD, erreurs Prisma toutes converties en 500, pas de {{global-error.tsx}}
+
+Estimation agrégée : 8 SP"
+2,1,,Story,US 9.1 — Comprendre et corriger chaque erreur (joueur et développeur),High,8,error-management,fullstack,,"En tant que *joueur*, je veux un message clair en français et une action possible quand une opération échoue, afin de ne pas rester bloqué.
+En tant que *développeur*, je veux retrouver la cause exacte d'une erreur grâce à un identifiant et à des logs, afin de corriger vite sans exposer de données sensibles.
+
+h3. Contrat d'erreur de l'API
+{noformat}
+HTTP 4xx/5xx
+X-Request-Id: 7f3c…
+{ ""error"": { ""code"": ""LISTING_ALREADY_SOLD"", ""message"": ""Cette carte vient d'être vendue."", ""requestId"": ""7f3c…"", ""fields"": { … } } }
+{noformat}
+En mode DEV uniquement, un champ {{debug}} ajoute le nom de l'erreur d'origine, le code Prisma et la pile d'appels.
+
+h3. Catalogue des cas
+||Cas||Code HTTP||Code applicatif||Effet côté interface||
+|Données invalides (Zod)|400|INVALID_INPUT|Erreur affichée sous chaque champ|
+|Non connecté|401|UNAUTHENTICATED|Redirection vers /connexion|
+|Rôle insuffisant / origine refusée|403|FORBIDDEN, INVALID_ORIGIN|Message « action non autorisée »|
+|Ressource absente (Prisma P2025)|404|NOT_FOUND|Message ou page 404|
+|Conflit / doublon (Prisma P2002), carte déjà vendue|409|CONFLICT, …|Message et rafraîchissement des données|
+|Trop de requêtes|429|RATE_LIMITED|Message avec délai (Retry-After)|
+|Base de données injoignable (P1001)|503|SERVICE_UNAVAILABLE|Message « service indisponible, réessayer »|
+|Crash du code|500|INTERNAL_ERROR|Message générique + identifiant à communiquer|
+
+h3. Mode DEV / PROD
+* DEV : réponse avec {{debug}}, logs lisibles en couleur, pile d'appels complète
+* PROD : message générique, aucun détail SQL, chemin de fichier ni secret ; log JSON d'une ligne avec {{requestId}}, route, statut, durée, userId pseudonymisé
+* Bascule par {{NODE_ENV}} et niveau réglable par {{LOG_LEVEL}}
+
+h3. Critères d'acceptation
+* *Étant donné* un formulaire mal rempli, *quand* je l'envoie, *alors* l'API répond 400 et chaque champ fautif affiche son message en français
+* *Étant donné* une session expirée, *quand* j'ouvre un booster, *alors* je suis redirigé vers /connexion sans perte du booster
+* *Étant donné* deux joueurs qui achètent la même annonce, *quand* le second valide, *alors* il reçoit 409 et un message clair, et son solde est inchangé
+* *Étant donné* la base de données arrêtée, *quand* j'appelle une route, *alors* je reçois 503 en PROD sans détail technique, et le log contient l'erreur Prisma complète avec le {{requestId}}
+* *Étant donné* une exception JavaScript dans un composant, *quand* la page s'affiche, *alors* la page d'erreur propose « Réessayer » et affiche l'identifiant (détail technique en DEV seulement)
+* *Étant donné* une URL inexistante, *quand* je l'ouvre, *alors* la page 404 en français propose un retour à l'accueil
+* *Étant donné* une erreur en PROD, *quand* je lis le log, *alors* aucun mot de passe, jeton, cookie ni {{DATABASE_URL}} n'y apparaît
+
+h3. Définition de prêt
+* Catalogue validé par le front et le back
+* Maquette des messages relue selon le design system
+
+h3. Définition de terminé
+* Sous-tâches terminées, documentation {{docs/errors.md}} publiée
+* Démonstration DEV puis PROD prête pour l'oral (404, crash JS, erreur API, base coupée)
+* CI verte (lint, types, unitaires, PostgreSQL, E2E, build)"
+3,2,,Subtask,[Back] Normaliser les erreurs API et convertir les erreurs Prisma,High,,error-management,back,,"Objectif : chaque erreur serveur produit le contrat de US 9.1.
+
+h3. Travaux
+* Générer un {{requestId}} par requête, le renvoyer dans {{X-Request-Id}} et dans le corps d'erreur
+* Convertir P2002 → 409, P2025 → 404, P1001/P1017 → 503 dans {{failure()}} ({{src/lib/api/http.ts}})
+* Ajouter le champ {{debug}} uniquement quand {{NODE_ENV !== ""production""}}
+* Compléter la liste des codes applicatifs dans {{src/lib/api/errors.ts}}
+
+h3. Définition de terminé
+* Validation Zod, contrôle d'authentification et d'autorisation
+* Tests unitaires ou PostgreSQL ajoutés et verts en CI
+* Aucune régression : {{npm run lint}}, {{npm run typecheck}}, {{npm test}}"
+4,2,,Subtask,[Back] Journaliser les erreurs en DEV et en PROD,High,,error-management,back,logs,"Objectif : aucune erreur 5xx sans trace exploitable.
+
+h3. Travaux
+* Créer {{src/lib/logger.ts}} : niveaux debug/info/warn/error, sortie lisible en DEV, JSON d'une ligne en PROD
+* Journaliser dans {{failure()}} : requestId, méthode, route, statut, durée, code, erreur d'origine
+* Masquer les secrets (mots de passe, cookies, en-têtes Authorization, URL de base de données)
+* Remplacer le {{console.error}} de {{src/lib/auth/index.ts}} par le logger
+* Pas de nouvelle dépendance sans justification (cf. AGENTS.md)
+
+h3. Définition de terminé
+* Validation Zod, contrôle d'authentification et d'autorisation
+* Tests unitaires ou PostgreSQL ajoutés et verts en CI
+* Aucune régression : {{npm run lint}}, {{npm run typecheck}}, {{npm test}}"
+5,2,,Subtask,[Front] Afficher les erreurs d'API de façon cohérente,High,,error-management,front,,"Objectif : un seul comportement pour toutes les réponses d'erreur.
+
+h3. Travaux
+* Créer un utilitaire client qui lit {{error.code}}, {{error.message}}, {{error.fields}}, {{error.requestId}}
+* 400 : erreurs par champ ; 401 : redirection /connexion ; 409 : message + rafraîchissement ; 429 : délai affiché ; 5xx : message générique + identifiant
+* Réutiliser cet utilitaire dans les formulaires existants (inscription, marché, revente, admin)
+
+h3. Définition de terminé
+* États chargement, vide, erreur et succès gérés
+* Libellés en français, accessible au clavier, lisible en 800x600 et sur mobile
+* Parcours couvert par un test Playwright"
+6,2,,Subtask,"[Front] Pages d'erreur : crash JavaScript, erreur globale et 404",High,,error-management,front,,"h3. Travaux
+* Ajouter {{src/app/global-error.tsx}} (erreur dans le layout racine)
+* Compléter {{src/app/error.tsx}} : identifiant ({{digest}}) affiché, détail technique en DEV uniquement
+* Vérifier {{src/app/not-found.tsx}} et les {{notFound()}} des pages dynamiques (athlète, sport inexistant)
+
+h3. Définition de terminé
+* États chargement, vide, erreur et succès gérés
+* Libellés en français, accessible au clavier, lisible en 800x600 et sur mobile
+* Parcours couvert par un test Playwright"
+7,2,,Subtask,"[Tests] Couvrir les cas d'erreur (unitaire, PostgreSQL, E2E)",High,,error-management,tests,,"h3. Travaux
+* Unitaire : conversion des erreurs Prisma, absence de {{debug}} en PROD, masquage des secrets dans le logger
+* PostgreSQL : double achat → 409, ressource absente → 404
+* Playwright : page 404, redirection 401, message d'erreur de formulaire
+
+h3. Définition de terminé
+* Tests verts en CI"
+8,2,,Subtask,[Doc] Documenter la stratégie d'erreurs et la lecture des logs,Medium,,error-management,documentation,,"h3. Travaux
+* Rédiger {{docs/errors.md}} : contrat, catalogue, DEV/PROD, où lire les logs, comment retrouver une erreur à partir d'un requestId
+* Ajouter le lien dans le README et dans CONTRIBUTING (onboarding)"
+10,,SCRUM-18,Story,US 4.3 — Gérer ma liste de souhaits de cartes (US stagiaire),Medium,5,stagiaire,fullstack,crud,"En tant que *collectionneur* (persona Thomas — voir docs/personas.md), je veux ajouter à une liste de souhaits les éditions qui me manquent, afin de savoir lesquelles chercher dans les boosters et sur le marché.
+
+User story fullstack confiée au stagiaire : CRUD complet, migration, API, interface, tests et PR.
+
+h3. Contrat d'API
+||Méthode||Route||Entrée||Réponse||Erreurs||
+|GET|/api/me/wishlist|page, pageSize|liste paginée : édition, athlète, rareté, possédée oui/non, annonces actives|401|
+|POST|/api/me/wishlist|{{editionId}}|201 élément créé (200 si déjà présent)|400, 401, 404 édition inconnue, 422 liste pleine (100)|
+|DELETE|/api/me/wishlist/:editionId|—|204|401, 404|
+
+h3. Modèle de données
+* {{WishlistItem}} : id, userId, editionId, createdAt ; unicité (userId, editionId) ; index sur userId
+* Migration Prisma non destructive
+
+h3. Critères d'acceptation
+* *Étant donné* une édition que je ne possède pas, *quand* je clique « Ajouter à ma liste », *alors* elle apparaît dans l'onglet Liste de souhaits de /collection
+* *Étant donné* une édition déjà dans ma liste, *quand* je l'ajoute de nouveau, *alors* aucun doublon n'est créé
+* *Étant donné* un élément de ma liste, *quand* je le retire, *alors* il disparaît sans recharger la page
+* *Étant donné* une édition de ma liste en vente sur le marché, *quand* j'ouvre ma liste, *alors* un lien « Disponible sur le marché » est affiché
+* *Étant donné* un visiteur non connecté, *quand* il appelle l'API, *alors* il reçoit 401
+* *Étant donné* un identifiant d'édition inexistant, *quand* je l'ajoute, *alors* je reçois 404 et un message en français
+
+h3. Points de départ
+* Lire {{CONTRIBUTING.md}}, {{GUIDELINES.md}}, {{docs/design-system.md}}
+* Modèle à suivre : {{src/server/collection/service.ts}} et {{src/app/api/me/cards/route.ts}}
+* Utilitaires API : {{src/lib/api/http.ts}} (requireApiUser, readJson, success, failure)
+* Interface : {{src/app/(game)/athletes/[id]/page.tsx}} (bouton) et {{src/app/(game)/collection/page.tsx}} (onglet)
+* Tests modèles : {{tests/integration/collection.test.ts}}, {{tests/e2e/game-loop.spec.ts}}
+
+h3. Définition de prêt
+* Environnement local installé ({{npm ci}}, Docker, {{db:deploy}}, {{db:seed}}, {{game:prepare}})
+* Tuteur désigné comme relecteur
+
+h3. Définition de terminé
+* Branche {{feat/SCRUM-xx-wishlist}} depuis {{dev}}, PR vers {{dev}} avec la clé Jira dans le titre
+* Lint, types, tests unitaires, PostgreSQL et E2E verts en CI
+* Revue du tuteur approuvée, PR fusionnée, rapport de stage rédigé"
+11,10,,Subtask,[Onboarding] Installer le projet et réaliser un premier parcours,Medium,,stagiaire,onboarding,,"h3. Travaux
+* Suivre le README : {{npm ci}}, {{.env}}, {{docker compose up -d}}, {{npm run db:deploy}}, {{npm run db:seed}}, {{npm run dev}}
+* Créer un compte, ouvrir un booster, consulter la collection
+* Lancer {{npm test}} et un test Playwright
+* Noter toute étape bloquante dans le carnet de passation
+
+h3. Validation
+* Application lancée en local et tests verts sur le poste du stagiaire"
+12,10,,Subtask,"[Back] Modèle WishlistItem, migration et service",Medium,,stagiaire,back,,"h3. Travaux
+* Ajouter {{WishlistItem}} dans {{prisma/schema.prisma}} et générer la migration
+* Créer {{src/server/wishlist/service.ts}} : lister (paginé), ajouter (idempotent), retirer, limite de 100 éléments
+
+h3. Définition de terminé
+* Validation Zod, contrôle d'authentification et d'autorisation
+* Tests unitaires ou PostgreSQL ajoutés et verts en CI
+* Aucune régression : {{npm run lint}}, {{npm run typecheck}}, {{npm test}}"
+13,10,,Subtask,[Back] Routes API /api/me/wishlist,Medium,,stagiaire,back,,"h3. Travaux
+* GET, POST et DELETE selon le contrat de l'US, validation Zod, réponses via {{success()}} et {{failure()}}
+* Contrôle d'origine sur POST et DELETE ({{assertSameOrigin}})
+
+h3. Définition de terminé
+* Validation Zod, contrôle d'authentification et d'autorisation
+* Tests unitaires ou PostgreSQL ajoutés et verts en CI
+* Aucune régression : {{npm run lint}}, {{npm run typecheck}}, {{npm test}}"
+14,10,,Subtask,[Front] Bouton « Ajouter à ma liste » et onglet Liste de souhaits,Medium,,stagiaire,front,,"h3. Travaux
+* Bouton sur les éditions manquantes de la fiche athlète
+* Onglet « Liste de souhaits » dans /collection : cartes, retrait, lien vers le marché
+* Composants du design system existants uniquement
+
+h3. Définition de terminé
+* États chargement, vide, erreur et succès gérés
+* Libellés en français, accessible au clavier, lisible en 800x600 et sur mobile
+* Parcours couvert par un test Playwright"
+15,10,,Subtask,"[Tests] Liste de souhaits : unitaire, PostgreSQL et E2E",Medium,,stagiaire,tests,,"h3. Travaux
+* PostgreSQL : ajout idempotent, unicité, limite de 100, retrait, isolation entre joueurs
+* Playwright : ajouter depuis la fiche athlète puis retrouver la carte dans l'onglet
+
+h3. Validation
+* Tests verts en CI"
+20,,SCRUM-20,Story,US 6.4 — Débloquer des succès de collection (US personnalisée),High,8,US-perso,fullstack,persona-gamification,"En tant que *joueur attiré par les statistiques et la progression* (persona Inès, la compétitrice — voir docs/personas.md), je veux débloquer des succès visibles sur mon profil, afin d'avoir des objectifs et de revenir ouvrir mes boosters.
+
+h3. Règles
+* Les succès sont définis en base (code, titre et description en français, type de condition, seuil, ordre) : ajoutables sans déploiement
+* Types de condition : cartes possédées, boosters ouverts, éditions découvertes dans un sport, première carte d'une rareté, ventes sur le marché
+* Évaluation côté serveur, dans la même transaction que l'ouverture, l'achat ou la vente qui les déclenche ; le client ne déclare jamais un succès
+* Un succès ne se débloque qu'une fois ; il reste acquis même si la carte est revendue
+
+h3. Contrat d'API
+||Méthode||Route||Réponse||
+|GET|/api/me/achievements|liste : code, titre, description, progression (valeur / seuil), débloqué le|
+|POST|/api/boosters/open (existant)|ajoute {{unlockedAchievements}} à la réponse|
+
+h3. Critères d'acceptation
+* *Étant donné* un joueur à 9 boosters ouverts, *quand* il ouvre le 10e, *alors* le succès « 10 boosters ouverts » est débloqué et une notification l'annonce sur l'écran de révélation
+* *Étant donné* un succès déjà débloqué, *quand* la condition est de nouveau remplie, *alors* il n'est pas dupliqué
+* *Étant donné* deux ouvertures simultanées qui atteignent le seuil, *quand* elles se terminent, *alors* un seul déblocage est enregistré
+* *Étant donné* le profil, *quand* je l'ouvre, *alors* je vois les succès débloqués, leur date, et une barre de progression pour les autres
+* *Étant donné* un écran 800x600, *quand* j'ouvre le profil, *alors* les badges restent lisibles sans défilement horizontal
+
+h3. Définition de prêt
+* Liste initiale de 10 succès et seuils validée
+* Persona Inès documenté dans docs/personas.md
+
+h3. Définition de terminé
+* Migration non destructive et seed des succès
+* Tests de concurrence PostgreSQL et parcours Playwright verts en CI
+* Revue de PR approuvée et ticket lié à la PR"
+21,20,,Subtask,"[Back] Modèles Achievement et UserAchievement, migration et seed",High,,US-perso,back,,"h3. Travaux
+* {{Achievement}} (code unique, titre, description, conditionType, threshold, sportId optionnel, ordre, actif)
+* {{UserAchievement}} (userId, achievementId, unlockedAt) avec unicité (userId, achievementId)
+* Seed idempotent de 10 succès initiaux
+
+h3. Définition de terminé
+* Validation Zod, contrôle d'authentification et d'autorisation
+* Tests unitaires ou PostgreSQL ajoutés et verts en CI
+* Aucune régression : {{npm run lint}}, {{npm run typecheck}}, {{npm test}}"
+22,20,,Subtask,[Back] Évaluer et débloquer les succès dans les transactions de jeu,High,,US-perso,back,,"h3. Travaux
+* Service {{src/server/achievements/service.ts}} appelé dans l'ouverture de booster, l'achat et la vente
+* Insertion protégée contre la concurrence (contrainte d'unicité, aucun doublon)
+* GET /api/me/achievements avec progression ; {{unlockedAchievements}} dans la réponse d'ouverture
+
+h3. Définition de terminé
+* Validation Zod, contrôle d'authentification et d'autorisation
+* Tests unitaires ou PostgreSQL ajoutés et verts en CI
+* Aucune régression : {{npm run lint}}, {{npm run typecheck}}, {{npm test}}"
+23,20,,Subtask,[Front] Badges de succès sur le profil et notification de déblocage,High,,US-perso,front,,"h3. Travaux
+* Section « Succès » sur /profil : badges débloqués, date, barres de progression
+* Notification sur l'écran de révélation du booster, respect de reduced-motion
+
+h3. Définition de terminé
+* États chargement, vide, erreur et succès gérés
+* Libellés en français, accessible au clavier, lisible en 800x600 et sur mobile
+* Parcours couvert par un test Playwright"
+24,20,,Subtask,"[Tests] Succès : déblocage, unicité et concurrence",High,,US-perso,tests,,"h3. Travaux
+* PostgreSQL : seuil atteint, pas de doublon, deux ouvertures simultanées → un seul déblocage
+* Playwright : ouvrir un booster, voir la notification, retrouver le badge sur le profil"
+30,,,Story,US 10.1 — Jouer sur un écran cathodique 800x600,Medium,3,persona-800x600,front,,"En tant que *joueur équipé d'un ancien écran 800x600* (persona Gérard, l’éducateur du club-house — voir docs/personas.md), je veux utiliser toutes les pages du jeu sans défilement horizontal, afin de jouer dans les mêmes conditions que les autres.
+
+h3. Critères d'acceptation
+* *Étant donné* une fenêtre de 800x600, *quand* j'ouvre boosters, collection, marché, profil et fiche athlète, *alors* aucun défilement horizontal n'apparaît
+* *Étant donné* l'écran boosters, *quand* j'ouvre un booster, *alors* le bouton d'ouverture et les cinq cartes révélées sont accessibles sans zoom
+* *Étant donné* la navigation, *quand* la largeur est de 800 px, *alors* elle passe en version compacte et reste utilisable au clavier
+* Textes d'au moins 14 px et contrastes conformes WCAG AA
+
+h3. Définition de terminé
+* Test Playwright avec un viewport 800x600 sur les pages principales, vert en CI"
+31,30,,Subtask,[Front] Adapter la mise en page à 800x600,Medium,,persona-800x600,front,,"h3. Travaux
+* Navigation compacte, grille de cartes à 3 colonnes, panneau booster tenant dans 600 px de haut
+* Vérifier tableaux et formulaires du marché et de l'administration
+
+h3. Définition de terminé
+* États chargement, vide, erreur et succès gérés
+* Libellés en français, accessible au clavier, lisible en 800x600 et sur mobile
+* Parcours couvert par un test Playwright"
+32,30,,Subtask,[Tests] Parcours Playwright en 800x600,Medium,,persona-800x600,tests,,"h3. Travaux
+* Projet Playwright dédié avec viewport 800x600
+* Vérifier l'absence de défilement horizontal ({{scrollWidth <= clientWidth}}) sur chaque page principale"
+40,,,Tâche,Rapports de stage : stagiaire et tuteur,High,,stage,,,"Le TD demande un rapport du stagiaire et un rapport du maître de stage. Joindre les deux à ce ticket et le lier à US 4.3.
+
+h3. Structure attendue des deux rapports
+* Contexte et objectif du stage, US confiée et lien vers la PR
+* Déroulé : onboarding (temps avant le premier lancement, avant la première PR), points bloquants
+* Ce qui a bien fonctionné, ce qui a moins bien fonctionné, avec des faits
+* Retours sur la documentation (README, CONTRIBUTING, design system, tickets)
+* Actions d'amélioration, chacune transformée en ticket
+
+h3. Conclusion du tuteur (version actuelle)
+J'inverserais les rôles plus tôt : faire coder le stagiaire pendant que je pose les questions, dès que les bases du projet sont comprises. Je relirais aussi le carnet de passation avec lui chaque fin de semaine plutôt qu'à la fin du stage.
+
+En conclusion, ce format a été utile au-delà de la seule continuité du projet : Elite Pack est mieux documenté, ses choix sont mieux justifiés, et il ne dépend plus d'une seule personne. Je le recommande, à condition d'y consacrer du temps dès le début et de fixer un objectif clair : à la fin, le stagiaire doit pouvoir travailler sans son tuteur."
+41,,,Tâche,Action stage — Faire coder le stagiaire dès la 2e séance,Medium,,stage,amelioration,,"Issue du retour de stage : inverser les rôles plus tôt.
+
+h3. Travaux
+* Ajouter à l'onboarding (CONTRIBUTING) une étape « première sous-tâche codée par le nouvel arrivant, le tuteur pose les questions »
+* Préparer en permanence un ticket d'accueil étiqueté {{good-first-issue}}
+
+h3. Validation
+* Le prochain arrivant ouvre sa première PR au plus tard à la 2e séance"
+42,,,Tâche,Action stage — Relire le carnet de passation chaque fin de semaine,Medium,,stage,amelioration,,"Issue du retour de stage : relire le carnet de passation avec le stagiaire chaque semaine plutôt qu'en fin de stage.
+
+h3. Travaux
+* Ajouter un modèle de carnet de passation dans {{docs/}}
+* Créer un rappel hebdomadaire et une rubrique « questions ouvertes » à traiter
+
+h3. Validation
+* Carnet daté et relu au moins une fois par semaine pendant le prochain stage"
