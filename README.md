@@ -54,6 +54,7 @@ Compose démarre PostgreSQL, attend qu’il soit sain, applique les migrations d
 | Architecture et base de données | [architecture](docs/architecture.md) · [base](docs/database.md) |
 | Authentification et rôle ADMIN | [authentification](docs/authentication.md) |
 | Imports TheSportsDB et droits des images | [imports](docs/imports.md) · [droits des images](docs/images-rights.md) |
+| Gestion des erreurs et journaux (mode DEV/PROD, démo `/demo/erreurs`) | [erreurs](docs/errors.md) |
 | CI, orchestration et automatisations | [automatisations](docs/automations.md) |
 | Contribution, conventions, workflow | [CONTRIBUTING](CONTRIBUTING.md) · [GUIDELINES](GUIDELINES.md) · [workflow](docs/workflow.md) |
 
@@ -83,13 +84,12 @@ La CI GitHub Actions exécute ces étapes dans des jobs enchaînés (qualité, p
 - `src/server` : services métier transactionnels (boosters, cartes, collection, économie, marché, imports, administration).
 - `src/providers` : client TheSportsDB validé par Zod, avec quota partagé en base.
 - `src/components` : composants d’interface et leurs stories Ladle (`*.stories.tsx`).
-- `src/lib` : authentification Auth.js, accès Prisma, format des réponses et des erreurs d’API.
+- `src/lib` : authentification Auth.js, accès Prisma, format des réponses et des erreurs d’API, journalisation.
 - `prisma` : schéma, migrations et seed non destructif.
 - `tests` : unitaires (Vitest), PostgreSQL réels (concurrence, transactions) et parcours navigateur (Playwright).
 
 ## Limites actuelles
 
-- **Gestion des erreurs** : le format d’erreur est unifié et sans détail technique, mais il n’existe pas encore de journalisation structurée ni de mode verbeux de développement ([SCRUM-87](https://lemeurvincent31.atlassian.net/browse/SCRUM-87)).
 - **Déploiement** : aucun déploiement automatique n’est configuré ; l’image Docker est construite et vérifiée en CI, mais n’est pas publiée.
 - **Ouverture** : la révélation des cartes est simple ; l’animation progressive par rareté reste à faire (SCRUM-28).
 - **Données** : seule TheSportsDB est utilisée (décision d’équipe du 17/11/2026) ; la clé gratuite limite le palmarès à 5 titres par athlète. Les images restent masquées tant que leurs droits ne sont pas validés dans `/admin/images`.
