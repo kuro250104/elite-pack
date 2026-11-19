@@ -92,8 +92,7 @@ La CI GitHub Actions exécute ces étapes dans des jobs enchaînés (qualité, p
 
 ## Limites actuelles
 
-- **Gestion des erreurs** : le format d’erreur est unifié et sans détail technique, mais il n’existe pas encore de journalisation structurée ni de mode verbeux de développement ([SCRUM-87](https://lemeurvincent31.atlassian.net/browse/SCRUM-87)).
-- **Déploiement** : aucun déploiement automatique n’est configuré ; l’image Docker est construite et vérifiée en CI, mais n’est pas publiée.
+- **Déploiement** : les images sont publiées automatiquement sur GHCR après chaque CI réussie sur `main`. Le déploiement sur le serveur est prêt, mais reste désactivé tant que l’administrateur n’a pas configuré le serveur et les secrets ([procédure](docs/deploiement.md)).
 - **Ouverture** : la révélation des cartes est simple ; l’animation progressive par rareté reste à faire (SCRUM-28).
 - **Données** : seule TheSportsDB est utilisée (décision d’équipe du 17/11/2026) ; la clé gratuite limite le palmarès à 5 titres par athlète. Les images restent masquées tant que leurs droits ne sont pas validés dans `/admin/images`.
 - **Connexion GitHub** : facultative, elle nécessite ses propres identifiants OAuth.

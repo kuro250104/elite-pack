@@ -36,6 +36,7 @@ describe("documentation OpenAPI", () => {
   it("génère un document OpenAPI 3.1 valide pour chaque opération", () => {
     const document = buildOpenApiDocument();
     expect(document.openapi).toBe("3.1.0");
+    expect(document.info.version).toBe("0.2.0");
     for (const operation of apiOperations) {
       const generated = document.paths[operation.path]?.[operation.method] as { responses: Record<string, unknown>; requestBody?: unknown };
       expect(generated, `${operation.method} ${operation.path}`).toBeDefined();

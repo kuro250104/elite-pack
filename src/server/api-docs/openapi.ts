@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import packageJson from "../../../package.json";
 import { paginationSchema } from "@/lib/validations/pagination";
 import { economySettingsSchema, boosterSettingsSchema } from "@/server/admin/economy";
 import { editionCreateSchema, editionPatchSchema, editionQuerySchema } from "@/server/admin/editions";
@@ -223,7 +224,7 @@ export function buildOpenApiDocument() {
     openapi: "3.1.0",
     info: {
       title: "API Elite Pack",
-      version: "0.1.0",
+      version: packageJson.version,
       description: [
         "API du jeu de cartes multisport Elite Pack. Toute la logique de jeu est exécutée côté serveur.",
         "**Format** : succès `{ \"data\": … }`, erreur `{ \"error\": { \"code\", \"message\", \"requestId\", \"fields\"? } }`, réponses `Cache-Control: no-store`.",
