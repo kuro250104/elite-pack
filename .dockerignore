@@ -1,0 +1,20 @@
+# Jamais dans l'image : secrets, dépendances et sorties locales.
+.env*
+!.env.example
+.git
+node_modules
+.next
+.next-e2e
+build-ladle
+coverage
+playwright-report
+test-results
+src/generated
+
+# Inutiles à l'exécution.
+.github
+.ladle
+docs
+tests
+**/*.stories.tsx
+*.md

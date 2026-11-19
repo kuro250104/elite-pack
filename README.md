@@ -1,85 +1,105 @@
 # Elite Pack — TCG multisport
 
-[Dépôt GitHub](https://github.com/kuro250104/elite-pack) · [GitHub Projects](https://github.com/users/kuro250104/projects/4) · [CI du socle](https://github.com/kuro250104/elite-pack/actions/runs/37938740829)
+[Dépôt GitHub](https://github.com/kuro250104/elite-pack) · [Board Jira SCRUM](https://lemeurvincent31.atlassian.net/jira/software/projects/SCRUM/boards/1/backlog) · [GitHub Project du POC](https://github.com/users/kuro250104/projects/4) · [Actions CI](https://github.com/kuro250104/elite-pack/actions)
 
-Elite Pack est un jeu de cartes à collectionner multisport, gratuit et entièrement en français. Sa fonctionnalité principale visée est l’ouverture de boosters gratuits avec choix du sport, afin de collectionner plusieurs éditions d’athlètes réels. Les résultats, stocks et échanges seront garantis par le serveur.
+Elite Pack est un jeu de cartes à collectionner multisport, gratuit et entièrement en français. Les joueurs reçoivent un booster gratuit toutes les 15 minutes, choisissent le sport à l’ouverture et collectionnent plusieurs éditions d’athlètes réels. Tirages, stocks, soldes et échanges sont décidés uniquement par le serveur.
 
-Ce **POC** prépare le travail d’équipe et le socle technique. Les comptes, sessions, modèles PostgreSQL et imports administratifs sont implémentés; l’ouverture, la frappe et le marché restent au backlog. Avant d’élargir le MVP, valider la documentation, le suivi hiérarchique, le board et les automatisations demandés par le TD.
+> **Nouvel arrivant ?** Commence par le [guide d’onboarding](docs/onboarding.md) : installation pas à pas, glossaire, premier ticket et dépannage.
 
-La conformité au sujet est suivie dans [la matrice du POC](docs/poc-conformite.md). Les [quatre EPICs et seize sous-tâches](docs/backlog.md) sont créés dans GitHub Projects avec leurs relations natives, priorités et estimations. Les [preuves de vérification](docs/poc-preuves.md) distinguent les résultats observés et les limites restantes.
+## Fonctionnalités livrées
 
-Socle Next.js App Router entièrement en français. Cette étape prépare les modèles, l’authentification et les frontières des services. Les imports administratifs sont disponibles; aucune ouverture, frappe ou vente n’est exposée.
+| Domaine | Ce que le joueur ou l’administrateur peut faire | Story Jira |
+| --- | --- | --- |
+| Compte | S’inscrire et se connecter par e-mail et mot de passe ; consulter son profil et son solde | SCRUM-26, SCRUM-27 |
+| Boosters | Recevoir un booster gratuit toutes les 15 minutes (plafond 10, même hors ligne), choisir le sport, ouvrir 5 cartes par tirage cryptographique côté serveur, retrouver l’historique | SCRUM-28, SCRUM-30, SCRUM-35 à 37 |
+| Événements | Acheter ou récupérer des boosters événementiels pendant leur période | SCRUM-40 |
+| Collection | Parcourir ses cartes (filtres, tris, doublons, cartes manquantes, progression par sport), l’encyclopédie et la page des sports | SCRUM-29, SCRUM-31, SCRUM-32, SCRUM-38 |
+| Économie | Revendre une carte à la banque ; vendre et acheter entre joueurs sans double achat ni solde négatif | SCRUM-33, SCRUM-34 |
+| Administration | Importer et synchroniser les athlètes TheSportsDB, valider les droits des images, gérer éditions, événements, probabilités et règles économiques, suivre les indicateurs | SCRUM-23 à 25, SCRUM-41 à 43 |
 
-## Démarrage local
+Le parcours complet du joueur et ce qui reste à faire sont visibles sur la [story map](docs/story-map.md). Les besoins viennent des [personas](docs/personas.md).
 
-Node.js 22.12+ (branche LTS conseillée), npm et Docker.
+## Démarrage rapide
+
+Prérequis : Node.js 22.12+, npm et Docker Desktop démarré.
 
 ```sh
 npm ci
 cp .env.example .env
 # Remplacer CHANGE_ME_LOCAL_PASSWORD dans POSTGRES_PASSWORD et DATABASE_URL.
-# Renseigner AUTH_SECRET (openssl rand -base64 32). Les identifiants OAuth sont facultatifs.
+# Renseigner AUTH_SECRET (openssl rand -base64 32).
 docker compose -p elite-pack-foundation up -d
 npm run db:deploy
 npm run db:seed
+npm run db:seed-demo   # catalogue jouable hors ligne : 2 athlètes, 12 éditions, 1 booster
 npm run dev
 ```
 
-La connexion locale fonctionne par e-mail et mot de passe dans `/inscription` et `/connexion`, sans GitHub. Le premier compte crée atomiquement le joueur, son portefeuille, le journal initial et le stock passif à zéro. La configuration initiale doit être seedée avant la première inscription. Les mots de passe sont hachés avec scrypt ; les sessions Auth.js utilisent un cookie JWT HTTP-only. Le rôle ADMIN reste contrôlé dans PostgreSQL et ne peut jamais être demandé par le navigateur. Voir [la connexion locale et l’accès administrateur](docs/authentication.md).
+L’application répond sur <http://localhost:3000>. Créer un compte sur `/inscription`, puis ouvrir le booster de bienvenue sur `/boosters`. Les étapes détaillées et le rôle ADMIN sont dans l’[onboarding](docs/onboarding.md#étape-4--lancer-lapplication).
 
-GitHub est facultatif : si vous l’activez, déclarer le callback `http://localhost:3000/api/auth/callback/github` dans son application OAuth.
-Auth.js v5 utilise actuellement la version `5.0.0-beta.32` : choix nécessaire à cette intégration App Router, à revalider avant mise en production. Next.js et Prisma sont verrouillés dans `package-lock.json`.
+### Pile complète en conteneurs
 
-Le compose écoute uniquement sur localhost. Ses identifiants sont destinés au développement. En production, fournir PostgreSQL managé, URL de connexion et secrets via l’environnement. Ne jamais utiliser ces identifiants en production.
+```sh
+docker compose -p elite-pack-foundation --profile app up -d --build
+```
+
+Compose démarre PostgreSQL, attend qu’il soit sain, applique les migrations dans un conteneur dédié qui s’arrête ensuite, puis lance l’application. Celle-ci est sondée sur `/api/health`, et chaque service a des limites de CPU et de mémoire. Le [Dockerfile](Dockerfile) produit une image Node minimale (sortie Next.js « standalone »), exécutée sans droits root.
+
+## Documentation
+
+| Sujet | Où |
+| --- | --- |
+| API REST (Swagger UI, générée depuis les schémas Zod) | <http://localhost:3000/api-docs> en développement · JSON sur `/api/openapi` |
+| Composants et design system (Ladle) | `npm run ladle` · [système de design](docs/design-system.md) |
+| Personas et story map | [personas](docs/personas.md) · [story map](docs/story-map.md) |
+| Architecture et base de données | [architecture](docs/architecture.md) · [base](docs/database.md) |
+| Authentification et rôle ADMIN | [authentification](docs/authentication.md) |
+| Imports TheSportsDB et droits des images | [imports](docs/imports.md) · [droits des images](docs/images-rights.md) |
+| Gestion des erreurs et journaux (mode DEV/PROD, démo `/demo/erreurs`) | [erreurs](docs/errors.md) |
+| CI, orchestration et automatisations | [automatisations](docs/automations.md) |
+| Mise en production, retour arrière, exploitation | [déploiement](docs/deploiement.md) |
+| Contribution, conventions, workflow | [CONTRIBUTING](CONTRIBUTING.md) · [GUIDELINES](GUIDELINES.md) · [workflow](docs/workflow.md) |
+
+La documentation de l’API est servie en développement et masquée en production, sauf si `API_DOCS_ENABLED=true`.
 
 ## Vérifications
 
 ```sh
 npm run lint
 npm run typecheck
-npm test
+npm test                      # unitaires, dont la synchronisation de la doc OpenAPI
 npm run db:validate
 npm run build
+npm run ladle:build           # documentation des composants
 npx playwright install chromium
-# TEST_DATABASE_URL active aussi le parcours administrateur réel.
+TEST_DATABASE_URL="$DATABASE_URL" npm run test:integration   # base locale migrée et dédiée aux tests
 TEST_DATABASE_URL="$DATABASE_URL" npm run test:e2e
-# Base locale migrée, dédiée aux tests ; les tests annulent leurs écritures.
-TEST_DATABASE_URL="$DATABASE_URL" npm run test:integration
 ```
 
-Pour les commandes de test ci-dessus, exporter `DATABASE_URL` depuis votre configuration locale dans le terminal.
+La CI GitHub Actions exécute ces étapes dans des jobs enchaînés (qualité, puis tests, compilation, documentation et image Docker), décrits dans les [automatisations](docs/automations.md).
 
-`npm run db:migrate` crée des migrations en développement ; `db:deploy` applique uniquement les migrations existantes. Ne jamais lancer de reset sur une base de production. Les contraintes SQL personnalisées doivent être conservées dans les futures migrations.
+`npm run db:migrate` crée une migration en développement ; `npm run db:deploy` applique uniquement les migrations existantes. Ne jamais réinitialiser une base partagée ou de production.
 
 ## Architecture
 
-- `src/app` : routes publiques françaises, espace joueur et administration protégés côté serveur.
-- `src/components/ui` : composants shadcn/ui locaux et tokens Tailwind.
-- `src/lib/auth` : Auth.js, adaptation Prisma et contrôles de rôles.
-- `src/lib/db` : client Prisma PostgreSQL chargé à la demande.
-- `src/providers` : TheSportsDB validé; recherches et imports administratifs avec quota partagé PostgreSQL.
-- `src/server` : services d’import, corrections administratives, quotas partagés et contrats des futures opérations.
-- `prisma` : schéma, migration initiale, seed non destructif.
-- `tests` : tests unitaires, contraintes PostgreSQL et parcours navigateur.
+- `src/app` : pages françaises (espace joueur, administration) et Route Handlers de `src/app/api`, volontairement fins.
+- `src/server` : services métier transactionnels (boosters, cartes, collection, économie, marché, imports, administration).
+- `src/providers` : client TheSportsDB validé par Zod, avec quota partagé en base.
+- `src/components` : composants d’interface et leurs stories Ladle (`*.stories.tsx`).
+- `src/lib` : authentification Auth.js, accès Prisma, format des réponses et des erreurs d’API, journalisation.
+- `prisma` : schéma, migrations et seed non destructif.
+- `tests` : unitaires (Vitest), PostgreSQL réels (concurrence, transactions) et parcours navigateur (Playwright).
 
-Consulter [l’architecture](docs/architecture.md), [la base](docs/database.md), [le design](docs/design-system.md) et [les skills](docs/skills.md).
+## Limites actuelles
 
-## Limites et prochaine étape
-
-Le login OAuth réel reste facultatif et nécessite ses identifiants. Le parcours administrateur utilise un cookie JWT de test signé et vérifie les rôles PostgreSQL réels. Le parcours de connexion locale utilise l’inscription et la connexion réelles, sans simuler le fournisseur Credentials. Les données de test sont retirées de façon ciblée; aucun reset n’est effectué. Playwright utilise son propre serveur sur le port 3100 et `.next-e2e`, sans réutiliser un serveur ouvert. `PLAYWRIGHT_PORT` permet de changer son port.
-
-Les imports TheSportsDB sont disponibles dans `/admin/imports` après configuration de la clé API et du rôle ADMIN. Recherche par nom, import du catalogue et import d’un athlète par identifiant sont disponibles. Les corrections restent prioritaires aux réimports et les identités ambiguës nécessitent une liaison explicite. Voir [le guide d’import](docs/imports.md).
-
-La génération passive, les achats et l’ouverture sont uniquement modélisés : leurs transactions et tests de concurrence seront implémentés lors de la phase cartes/boosters. Les montants utilisent des entiers PostgreSQL `BIGINT`, à sérialiser en chaînes décimales dans les API. Les images sportives restent masquées jusqu’à validation documentée dans `/admin/images`. Voir [les droits des images](docs/images-rights.md) et [le dossier Commons de démonstration](docs/image-review-example.md). Aucun catalogue complet n’est codé en dur.
-
-Avant publication, limiter aussi les routes OAuth à la passerelle d’hébergement. L’audit des dépendances et les vérifications sont détaillés dans [docs/verification.md](docs/verification.md).
-
-Prochaine étape : faire relire le socle et les preuves du POC, puis compléter le rendu dans la feuille lorsque sa ligne sera identifiée. Après validation de l’architecture : enrichissement Wikidata et validation des images, puis éditions de cartes et contrôle transactionnel des quantités.
+- **Déploiement** : les images sont publiées automatiquement sur GHCR après chaque CI réussie sur `main`. Le déploiement sur le serveur est prêt, mais reste désactivé tant que l’administrateur n’a pas configuré le serveur et les secrets ([procédure](docs/deploiement.md)).
+- **Ouverture** : la révélation des cartes est simple ; l’animation progressive par rareté reste à faire (SCRUM-28).
+- **Données** : seule TheSportsDB est utilisée (décision d’équipe du 17/11/2026) ; la clé gratuite limite le palmarès à 5 titres par athlète. Les images restent masquées tant que leurs droits ne sont pas validés dans `/admin/images`.
+- **Connexion GitHub** : facultative, elle nécessite ses propres identifiants OAuth.
+- **Auth.js** : version `5.0.0-beta.32`, à revalider avant une mise en production.
 
 ## Travailler en équipe
 
-Lire [CONTRIBUTING.md](CONTRIBUTING.md) pour le démarrage et les PR, [GUIDELINES.md](GUIDELINES.md) pour les conventions et SemVer, puis [le workflow des tickets](docs/workflow.md) pour les statuts et critères DoR/DoD. Les branches de fonctionnalité partent de `dev` (intégration) et `dev` est promue vers `main` (stable) par PR, les deux étant protégées; les versions commencent à `0.1.0`.
+Le suivi se fait dans le [board Jira SCRUM](https://lemeurvincent31.atlassian.net/jira/software/projects/SCRUM/boards/1/backlog) ; le GitHub Project nº 4 conserve l’historique du POC. Les branches partent de `dev` et y reviennent par PR ; `dev` est promue vers `main` par PR, les deux étant protégées. Les versions suivent SemVer à partir de `0.1.0`.
 
-Les [automatisations](docs/automations.md) comprennent CI, triage des issues et Dependabot. La CI du socle et le triage ont réussi sur GitHub ; les transitions initiales, de clôture et de réouverture du Project ont été démontrées. Les liens du dépôt et du suivi restent à reporter dans la feuille demandée par le TD lorsque la ligne de destination sera identifiée.
-
-Pour vérifier le backlog sans appel GitHub : `npm run project:preview`. Le [guide GitHub Projects](docs/github-projects.md) explique la préparation des sous-issues, des vues et des champs. L’importeur conserve les éléments déjà créés lors d’une reprise; son mode d’application nécessite un projet cible et un accès GitHub explicites.
+Lire [CONTRIBUTING.md](CONTRIBUTING.md) pour les branches et les PR, [GUIDELINES.md](GUIDELINES.md) pour les conventions, et [le workflow](docs/workflow.md) pour les statuts et critères DoR/DoD.

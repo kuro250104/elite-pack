@@ -25,10 +25,10 @@ describe("importation et corrections athlètes atomiques", () => {
       const first = await applyExternalAthlete(tx, external, { actorId: admin.id });
       expect(first.action).toBe("created");
       const repeat = await applyExternalAthlete(tx, external, { actorId: admin.id });
-      expect(repeat).toEqual({ athleteId: first.athleteId, action: "updated" });
+      expect(repeat).toEqual({ athleteId: first.athleteId, action: "updated", changed: [] });
       const secondary = { ...external, provider: "wikidata", externalId: randomUUID() };
       await expect(applyExternalAthlete(tx, secondary, { actorId: admin.id })).rejects.toMatchObject({ code: "IDENTITY_REVIEW_REQUIRED" });
-      expect(await applyExternalAthlete(tx, secondary, { actorId: admin.id, targetAthleteId: first.athleteId })).toEqual({ athleteId: first.athleteId, action: "linked" });
+      expect(await applyExternalAthlete(tx, secondary, { actorId: admin.id, targetAthleteId: first.athleteId })).toEqual({ athleteId: first.athleteId, action: "linked", changed: [] });
       await updateAthlete(tx, first.athleteId, { name: "Nom corrigé", nationality: null, prestigeOverride: 99, active: false }, admin.id);
       await applyExternalAthlete(tx, { ...external, teamName: null }, { actorId: admin.id });
       const athlete = await tx.athlete.findUniqueOrThrow({ where: { id: first.athleteId }, include: { image: true, externalIds: true } });

@@ -5,6 +5,7 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import type { Adapter } from "next-auth/adapters";
 import { db } from "@/lib/db/prisma";
+import { logger as appLogger } from "@/lib/logger";
 import { createPlayer } from "@/server/players/create-player";
 import { authenticateCredentials } from "@/server/auth/service";
 const adapter: Adapter = {
@@ -41,5 +42,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
   },
-  logger:{error(error){console.error("Authentification indisponible :",error.name);}},
+  // Only the error type is logged: Auth.js errors may carry credentials or tokens.
+  logger:{error(error){appLogger.error("Authentification indisponible",{error:{name:error.name}});}},
 });

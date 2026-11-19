@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
-import type { AthleteProvider, ExternalAthlete } from "../types";
-import { lookupResponseSchema, searchResponseSchema, sportsResponseSchema, type SportsDbPlayer } from "./schemas";
+import type { AthleteProvider, ExternalAthlete, ExternalHonour } from "../types";
+import { honoursResponseSchema, lookupResponseSchema, searchResponseSchema, sportsResponseSchema, type SportsDbPlayer } from "./schemas";
 
 const optionsSchema = z.object({
   apiKey: z.string().regex(/^\d+$/),
@@ -34,7 +34,7 @@ function mapPlayer(player: SportsDbPlayer): ExternalAthlete {
 
 /** Use one instance per import worker. Distributed workers require a shared limiter. */
 export class TheSportsDbProvider implements AthleteProvider {
-  readonly capabilities = { search: true, lookup: true, listSports: true, athletesBySport: false } as const;
+  readonly capabilities = { search: true, lookup: true, listSports: true, athletesBySport: false, honours: true } as const;
   private readonly options: z.output<typeof optionsSchema>;
   private queue: Promise<unknown> = Promise.resolve();
   private nextRequestAt = 0;
@@ -91,6 +91,13 @@ export class TheSportsDbProvider implements AthleteProvider {
     const validQuery = z.string().trim().min(2).max(120).parse(query);
     const data = searchResponseSchema.parse(await this.request("searchplayers.php", { p: validQuery }));
     return (data.player ?? []).map(mapPlayer);
+  }
+
+  async getHonours(id: string): Promise<ExternalHonour[]> {
+    const validId = z.string().regex(/^\d+$/).parse(id);
+    const data = honoursResponseSchema.parse(await this.request("lookuphonours.php", { id: validId }));
+    return (data.honours ?? []).map((honour) => ({ externalId: honour.idHonour, title: honour.strHonour,
+      season: text(honour.strSeason), team: text(honour.strTeam) }));
   }
 
   async getSports() {

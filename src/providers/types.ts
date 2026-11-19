@@ -18,6 +18,15 @@ export interface ExternalAthlete {
   position: string | null;
   biographyFrench: string | null;
   images: ExternalImageReference[];
+  /** Absent when the honours were not fetched; an empty list means the provider has none. */
+  honours?: ExternalHonour[];
+}
+
+export interface ExternalHonour {
+  externalId: string;
+  title: string;
+  season: string | null;
+  team: string | null;
 }
 
 export interface ExternalSport {
@@ -33,8 +42,10 @@ export interface AthleteProvider {
     lookup: boolean;
     listSports: boolean;
     athletesBySport: false;
+    honours?: boolean;
   };
   getAthlete(id: string): Promise<ExternalAthlete | null>;
   searchAthletes(query: string): Promise<ExternalAthlete[]>;
   getSports(): Promise<ExternalSport[]>;
+  getHonours?(id: string): Promise<ExternalHonour[]>;
 }

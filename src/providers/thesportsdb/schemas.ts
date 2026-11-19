@@ -25,4 +25,14 @@ export const sportsResponseSchema = z.object({
   })).nullable(),
 });
 
+/** lookuphonours.php; the free key returns at most five honours per player. */
+export const honoursResponseSchema = z.object({
+  honours: z.array(z.object({
+    idHonour: z.string().regex(/^\d+$/),
+    strHonour: z.string().trim().min(1),
+    strSeason: optionalText,
+    strTeam: optionalText,
+  })).nullable(),
+});
+
 export type SportsDbPlayer = z.infer<typeof playerSchema>;

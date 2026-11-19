@@ -257,9 +257,16 @@ model GameConfiguration {
   id                     String   @id @default("default")
   passiveIntervalSeconds Int      @default(900)
   passiveMaxStock        Int      @default(10)
-  startingBalance        BigInt   @default(0)
+  startingBalance        BigInt   @default(500)
   bankResaleBasisPoints  Int      @default(6000)
   updatedAt              DateTime @updatedAt @db.Timestamptz(3)
+}
+
+/// Base value of each rarity, in integer coins. Edition value = baseValue × (100 + effective prestige) / 100.
+model RarityValue {
+  rarity    Rarity   @id
+  baseValue BigInt
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 }
 
 model PassiveBoosterState {
@@ -272,24 +279,26 @@ model PassiveBoosterState {
 }
 
 model BoosterType {
-  id          String                @id @default(cuid())
-  slug        String                @unique
-  nameFr      String
-  category    BoosterCategory
-  cardCount   Int                   @default(5)
-  price       BigInt                @default(0)
-  active      Boolean               @default(false)
-  startsAt    DateTime?             @db.Timestamptz(3)
-  endsAt      DateTime?             @db.Timestamptz(3)
-  season      String?
-  competition String?
-  createdAt   DateTime              @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime              @updatedAt @db.Timestamptz(3)
-  sports      BoosterSport[]
-  editions    BoosterEdition[]
-  weights     BoosterRarityWeight[]
-  inventory   BoosterInventory[]
-  openings    BoosterOpening[]
+  id           String                @id @default(cuid())
+  slug         String                @unique
+  nameFr       String
+  category     BoosterCategory
+  cardCount    Int                   @default(5)
+  price        BigInt                @default(0)
+  active       Boolean               @default(false)
+  startsAt     DateTime?             @db.Timestamptz(3)
+  endsAt       DateTime?             @db.Timestamptz(3)
+  season       String?
+  competition  String?
+  /// Event boosters only: purchases allowed per player during the event; null means unlimited.
+  maxPerPlayer Int?
+  createdAt    DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime              @updatedAt @db.Timestamptz(3)
+  sports       BoosterSport[]
+  editions     BoosterEdition[]
+  weights      BoosterRarityWeight[]
+  inventory    BoosterInventory[]
+  openings     BoosterOpening[]
 }
 
 model BoosterSport {

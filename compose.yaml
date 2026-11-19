@@ -1,3 +1,6 @@
+# Développement : `docker compose -p elite-pack-foundation up -d` démarre uniquement PostgreSQL.
+# Pile complète conteneurisée : `docker compose -p elite-pack-foundation --profile app up -d --build`
+#   postgres (sain) → migrate (terminé avec succès) → app (sonde /api/health)
 services:
   postgres:
     image: postgres:17-alpine
@@ -14,5 +17,53 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 1G }
+        reservations: { memory: 256M }
+
+  migrate:
+    profiles: ["app"]
+    build: { context: ., target: migrator }
+    environment:
+      DATABASE_URL: postgresql://elite_pack:${POSTGRES_PASSWORD}@postgres:5432/elite_pack?schema=public
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 512M }
+
+  app:
+    profiles: ["app"]
+    build: { context: ., target: runner }
+    environment:
+      DATABASE_URL: postgresql://elite_pack:${POSTGRES_PASSWORD}@postgres:5432/elite_pack?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      AUTH_URL: http://localhost:3000
+      AUTH_TRUST_HOST: "true"
+      THESPORTSDB_API_KEY: ${THESPORTSDB_API_KEY:-}
+      THESPORTSDB_MODE: ${THESPORTSDB_MODE:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      API_DOCS_ENABLED: ${API_DOCS_ENABLED:-false}
+      ERROR_DEMO_ENABLED: ${ERROR_DEMO_ENABLED:-false}
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      postgres: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 768M }
+        reservations: { memory: 256M }
+
 volumes:
   postgres_data:
