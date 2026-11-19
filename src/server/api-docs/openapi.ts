@@ -15,6 +15,7 @@ import { bankSaleSchema } from "@/server/economy/bank";
 import { imageReviewCommandSchema } from "@/server/images/validation";
 import { syncOptionsSchema } from "@/server/imports/sync";
 import { importCommandSchema } from "@/server/imports/validation";
+import { errorDemoQuerySchema } from "@/server/demo/errors";
 import { createListingSchema, marketplaceQuerySchema } from "@/server/marketplace/service";
 import { sportPatchSchema } from "@/server/sports/validation";
 
@@ -122,6 +123,9 @@ export const apiOperations: ApiOperation[] = [
   // Exploitation et documentation
   { method: "get", path: "/api/health", tag: "Documentation", access: "public",
     summary: "État du service", description: "Sonde des conteneurs et de l’orchestrateur : 200 si l’application et PostgreSQL répondent, 503 sinon, sans détail technique." },
+  { method: "get", path: "/api/demo/erreur", tag: "Documentation", access: "public", query: errorDemoQuerySchema,
+    summary: "Déclencher une erreur de démonstration",
+    description: "Répond toujours par une erreur réelle du type demandé (validation Zod, accès refusé, enregistrement Prisma absent, conflit, SQL invalide, plantage). Disponible en développement, ou en production si `ERROR_DEMO_ENABLED=true`." },
   { method: "get", path: "/api/openapi", tag: "Documentation", access: "public",
     summary: "Ce document OpenAPI", description: "Disponible en développement, ou en production si `API_DOCS_ENABLED=true`." },
 ];
@@ -211,7 +215,9 @@ export function buildOpenApiDocument() {
   };
   for (const [status, [description, code, message]] of Object.entries(errorExamples)) {
     responses[`E${status}`] = { description,
-      content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorEnvelope" }, example: { error: { code, message } } } } };
+      headers: { "X-Request-Id": { $ref: "#/components/headers/RequestId" } },
+      content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorEnvelope" },
+        example: { error: { code, message, requestId: "3f0c2a9e-6b1d-4e7a-9c55-0d2f6a1b8e41" } } } } };
   }
   return {
     openapi: "3.1.0",
@@ -220,7 +226,8 @@ export function buildOpenApiDocument() {
       version: "0.1.0",
       description: [
         "API du jeu de cartes multisport Elite Pack. Toute la logique de jeu est exécutée côté serveur.",
-        "**Format** : succès `{ \"data\": … }`, erreur `{ \"error\": { \"code\", \"message\", \"fields\"? } }`, réponses `Cache-Control: no-store`.",
+        "**Format** : succès `{ \"data\": … }`, erreur `{ \"error\": { \"code\", \"message\", \"requestId\", \"fields\"? } }`, réponses `Cache-Control: no-store`.",
+        "**Erreurs** : chaque erreur porte un `requestId` (corps et en-tête `X-Request-Id`) qui permet de la retrouver dans les journaux du serveur. En développement uniquement, un champ `debug` ajoute l’erreur d’origine ; en production, aucun détail technique n’est renvoyé. Stratégie complète : `docs/errors.md`.",
         "**Sécurité** : les requêtes qui modifient l’état exigent un en-tête `Origin` du site ; les opérations économiques exigent un `Idempotency-Key`.",
         "**Montants** : entiers de pièces sérialisés en chaînes décimales.",
         "L’authentification elle-même (`/api/auth/*` hors inscription) est gérée par Auth.js et n’est pas décrite ici.",
@@ -246,8 +253,14 @@ export function buildOpenApiDocument() {
         ErrorEnvelope: { type: "object", required: ["error"], properties: { error: { type: "object", required: ["code", "message"], properties: {
           code: { type: "string", description: "Code stable, en anglais, destiné au code client." },
           message: { type: "string", description: "Message en français, affichable à l’utilisateur." },
+          requestId: { type: "string", format: "uuid", description: "Identifiant de la requête, à rechercher dans les journaux du serveur." },
           fields: { type: "object", additionalProperties: { type: "string" }, description: "Erreurs par champ de formulaire." },
+          debug: { type: "object", description: "Développement uniquement : erreur d’origine (nom, message, code, premières lignes de la pile). Jamais présent en production.",
+            properties: { name: { type: "string" }, message: { type: "string" }, code: { type: ["string", "number"] }, stack: { type: "array", items: { type: "string" } } } },
         } } } },
+      },
+      headers: {
+        RequestId: { description: "Identifiant de la requête, identique à `error.requestId`.", schema: { type: "string", format: "uuid" } },
       },
       responses,
     },

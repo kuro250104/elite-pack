@@ -1,4 +1,3 @@
-import { ApiError } from "@/lib/api/errors";
 import { failure, success } from "@/lib/api/http";
 import { db } from "@/lib/db/prisma";
 
@@ -10,7 +9,7 @@ export async function GET() {
     await db.$queryRaw`SELECT 1`;
     return success({ status: "ok", database: "ok" });
   } catch (error) {
-    if (error instanceof ApiError) return failure(error);
-    return failure(new ApiError("SERVICE_UNAVAILABLE", "Le service est temporairement indisponible.", 503));
+    // Any failure of the probe means "not ready": 503, with the original error in the logs only.
+    return failure(error, { unexpectedStatus: 503 });
   }
 }

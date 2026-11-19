@@ -45,6 +45,9 @@ services:
       AUTH_TRUST_HOST: "true"
       THESPORTSDB_API_KEY: ${THESPORTSDB_API_KEY:-}
       THESPORTSDB_MODE: ${THESPORTSDB_MODE:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      API_DOCS_ENABLED: ${API_DOCS_ENABLED:-false}
+      ERROR_DEMO_ENABLED: ${ERROR_DEMO_ENABLED:-false}
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:
