@@ -15,6 +15,7 @@ cp .env.example .env
 docker compose -p elite-pack-foundation up -d
 npm run db:deploy
 npm run db:seed
+npm run db:seed-demo
 npm run dev
 ```
 
