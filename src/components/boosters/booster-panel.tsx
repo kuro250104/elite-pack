@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { PackageOpen } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { apiErrorMessage } from "@/lib/api/client-errors";
-import { AthleteCard, rarityPresentation, type CardView, type CardRarity } from "@/components/cards/athlete-card";
+import { rarityPresentation, type CardView, type CardRarity } from "@/components/cards/athlete-card";
+import { BoosterReveal } from "./booster-reveal";
 
 const passiveSchema = z.object({ stock: z.number().int().nonnegative(), maxStock: z.number().int().positive(), intervalSeconds: z.number().int().positive(), nextGenerationAt: z.string().nullable(), serverTime: z.string() });
 type PassiveSnapshot = z.infer<typeof passiveSchema>;
@@ -38,7 +38,7 @@ export function BoosterPanel({ initial }: { initial: BoosterPanelInitial }) {
   const [welcomeClaimed, setWelcomeClaimed] = useState(initial.welcomeClaimed);
   const [sportId, setSportId] = useState(initial.sports[0]?.id ?? "");
   const [pending, setPending] = useState<"welcome" | "open" | null>(null);
-  const [cards, setCards] = useState<CardView[]>([]);
+  const [opened, setOpened] = useState<{ cards: CardView[]; sport: string } | null>(null);
   const [message, setMessage] = useState("");
   const [failed, setFailed] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -90,9 +90,9 @@ export function BoosterPanel({ initial }: { initial: BoosterPanelInitial }) {
     flight.current = true; setPending("open"); setMessage(""); setFailed(false);
     try {
       const result = openingSchema.parse(await request("/api/boosters/open", current.body, current.key));
-      setCards(result.data.cards); setRetry(null);
+      setOpened({ cards: result.data.cards, sport: initial.sports.find(sport => sport.id === current.body.sportId)?.nameFr ?? "Booster" }); setRetry(null);
       if (result.data.source === "welcome") setWelcomeAvailable(value => Math.max(0, value - (result.data.replay ? 0 : 1)));
-      setMessage("Votre booster est ouvert. Découvrez vos cartes !");
+      setMessage("");
     } catch (error) {
       setFailed(true);
       if (error instanceof ApiFailure && error.definitive) { setRetry(null); setMessage(error.message); }
@@ -114,6 +114,6 @@ export function BoosterPanel({ initial }: { initial: BoosterPanelInitial }) {
       <div aria-live="polite" aria-atomic="true">{message && <p role={failed ? "alert" : "status"} className={`mt-4 text-sm ${failed ? "text-destructive" : "text-primary"}`}>{message}</p>}</div>
       <details className="mt-6"><summary className="min-h-11 cursor-pointer py-3 text-sm text-primary">Probabilités par carte</summary><dl className="grid gap-2 text-sm sm:grid-cols-2">{initial.weights.map(weight => <div key={weight.rarity} className="flex justify-between gap-3"><dt>{rarityPresentation[weight.rarity].name}</dt><dd>{(weight.weightBasisPoints / 100).toLocaleString("fr-FR")} %</dd></div>)}</dl></details>
     </section>
-    {cards.length > 0 && <section aria-labelledby="cards-title"><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><h2 id="cards-title" className="text-2xl font-semibold">Vos nouvelles cartes</h2><Link href="/collection" className="text-sm text-primary underline underline-offset-4">Voir ma collection</Link></div><div className="grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">{cards.map((card, index) => <motion.div key={card.instanceId} initial={reducedMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reducedMotion ? 0 : 0.25, delay: reducedMotion ? 0 : index * 0.08 }}><AthleteCard card={card} /></motion.div>)}</div></section>}
+    {opened && <BoosterReveal key={opened.cards[0]?.instanceId} cards={opened.cards} sport={opened.sport} onClose={() => setOpened(null)} />}
   </div>;
 }
