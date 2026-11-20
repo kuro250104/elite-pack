@@ -71,4 +71,23 @@ describe("TheSportsDB", () => {
     const provider = new TheSportsDbProvider({ apiKey: "123" }, vi.fn<typeof fetch>().mockResolvedValue(response({ sports: [{ idSport: "102", strSport: "Soccer" }] })));
     expect(await provider.getSports()).toEqual([{ externalId: "102", providerName: "Soccer", category: null }]);
   });
+
+  it("liste les équipes d’une ligue et exclut l’encadrement de l’effectif", async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(response({ teams: [{ idTeam: "7", strTeam: "Équipe", strSport: "Basketball" }] }))
+      .mockResolvedValueOnce(response({ player: [{ ...player, strStatus: "Active", strSport: "Basketball" },
+        { idPlayer: "43", strPlayer: "Entraîneur", strStatus: "Coaching" }, { idPlayer: "44", strPlayer: "Sans statut" }] }));
+    const provider = new TheSportsDbProvider({ apiKey: "123", minIntervalMs: 2_100 }, fetcher);
+    vi.useFakeTimers({ shouldAdvanceTime: true, advanceTimeDelta: 500 });
+    expect(await provider.getTeamsByLeague("French Ligue 1")).toEqual([{ externalId: "7", name: "Équipe", sportName: "Basketball" }]);
+    expect((await provider.getTeamPlayers("7")).map((row) => row.externalId)).toEqual(["42", "44"]);
+    expect(String(fetcher.mock.calls[0]?.[0])).toContain("search_all_teams.php?l=French+Ligue+1");
+    expect(String(fetcher.mock.calls[1]?.[0])).toContain("lookup_all_players.php?id=7");
+  });
+
+  it("expose le statut HTTP d’un refus pour permettre la reprise après un 429", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response("", { status: 429 }));
+    const provider = new TheSportsDbProvider({ apiKey: "123", maxRetries: 0 }, fetcher);
+    await expect(provider.getTeamPlayers("7")).rejects.toMatchObject({ name: "ProviderRequestError", status: 429 });
+  });
 });

@@ -13,10 +13,20 @@ export const playerSchema = z.object({
   strDescriptionFR: optionalText,
   strThumb: optionalText,
   strCutout: optionalText,
+  /** "Active", "Coaching", "Retired"…: staff listed with a team are not athletes. */
+  strStatus: optionalText,
 });
 
 export const lookupResponseSchema = z.object({ players: z.array(playerSchema).nullable() });
 export const searchResponseSchema = z.object({ player: z.array(playerSchema).nullable() });
+/** search_all_teams.php; the free key returns at most ten teams per league. */
+export const teamsResponseSchema = z.object({
+  teams: z.array(z.object({
+    idTeam: z.string().regex(/^\d+$/),
+    strTeam: z.string().trim().min(1),
+    strSport: optionalText,
+  })).nullable(),
+});
 export const sportsResponseSchema = z.object({
   sports: z.array(z.object({
     idSport: z.string().regex(/^\d+$/),
