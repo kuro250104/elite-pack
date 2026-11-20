@@ -14,8 +14,17 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 800, height: 600 }
       const player = await tx.user.create({ data: {} });
       const sport = await tx.sport.create({ data: { slug: randomUUID(), nameFr: "Sport de test", providerName: "Test", active: true } });
       const athlete = await tx.athlete.create({ data: { sportId: sport.id, name: athleteName } });
-      await tx.cardEdition.create({ data: { athleteId: athlete.id, rarity: "RARE", name: "Édition souhaitée", active: true } });
-      return { player, sport, athlete };
+      const edition = await tx.cardEdition.create({ data: {
+        athleteId: athlete.id, rarity: "RARE", name: "Édition souhaitée", active: true,
+      } });
+      const seller = await tx.user.create({ data: { name: "Vendeur de test" } });
+      const card = await tx.cardInstance.create({ data: {
+        editionId: edition.id, ownerId: seller.id, acquisitionSource: "ADMIN",
+      } });
+      const listing = await tx.marketplaceListing.create({ data: {
+        cardInstanceId: card.id, sellerId: seller.id, price: 150n,
+      } });
+      return { player, sport, athlete, seller, card, listing };
     });
     try {
       await page.setViewportSize(viewport);
@@ -34,14 +43,25 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 800, height: 600 }
       await expect(page).toHaveURL(/\/collection\/souhaits$/);
       await expect(page.getByRole("heading", { name: athleteName })).toBeVisible();
       expect(await noOverflow()).toBe(true);
-      await remove.click();
-      await expect(page.getByText("Votre liste de souhaits est vide.", { exact: false })).toBeVisible();
+      const market = page.getByRole("link", { name: "Disponible sur le marché (1)", exact: true });
+      await market.click();
+      await expect(page).toHaveURL((url) => url.pathname === "/marche"
+        && url.searchParams.get("query") === athleteName && url.searchParams.get("rarity") === "RARE");
+      await expect(page.getByText("Édition souhaitée", { exact: true })).toBeVisible();
+      await page.goBack();
+      await expect(page).toHaveURL(/\/collection\/souhaits$/);
+      await expect(async () => {
+        if (await remove.isVisible()) await remove.click({ timeout: 2_000 });
+        await expect(page.getByText("Votre liste de souhaits est vide.", { exact: false })).toBeVisible({ timeout: 1_000 });
+      }).toPass({ timeout: 15_000 });
       await expect(page.getByRole("heading", { name: athleteName })).toHaveCount(0);
     } finally {
       try {
         await prisma.$transaction(async (tx) => {
           await tx.rateLimitBucket.deleteMany({ where: { key: { endsWith: `:${data.player.id}` } } });
-          await tx.user.delete({ where: { id: data.player.id } });
+          await tx.marketplaceListing.delete({ where: { id: data.listing.id } });
+          await tx.cardInstance.delete({ where: { id: data.card.id } });
+          await tx.user.deleteMany({ where: { id: { in: [data.player.id, data.seller.id] } } });
           await tx.cardEdition.deleteMany({ where: { athleteId: data.athlete.id } });
           await tx.athlete.delete({ where: { id: data.athlete.id } });
           await tx.sport.delete({ where: { id: data.sport.id } });
