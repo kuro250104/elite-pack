@@ -14,6 +14,7 @@ import { openBoosterRequestSchema } from "@/server/boosters/opening";
 import { collectionQuerySchema } from "@/server/collection/service";
 import { wishlistAddSchema, wishlistQuerySchema } from "@/server/wishlist/service";
 import { bankSaleSchema } from "@/server/economy/bank";
+import { walletHistoryQuerySchema } from "@/server/wallet/history";
 import { imageReviewCommandSchema } from "@/server/images/validation";
 import { syncOptionsSchema } from "@/server/imports/sync";
 import { importCommandSchema } from "@/server/imports/validation";
@@ -88,6 +89,8 @@ export const apiOperations: ApiOperation[] = [
   // Économie
   { method: "post", path: "/api/bank/sales", tag: "Économie", access: "player", body: bankSaleSchema, idempotency: "uuid",
     summary: "Revendre une carte à la banque", description: "Prix = valeur de l’édition × taux de rachat configuré. La carte doit appartenir au joueur et ne pas être en vente." },
+  { method: "get", path: "/api/me/wallet", tag: "Économie", access: "player", query: walletHistoryQuerySchema,
+    summary: "Portefeuille et historique paginé du joueur", description: "Montants en chaînes décimales. Filtrage facultatif par type de transaction." },
   { method: "get", path: "/api/marketplace", tag: "Économie", access: "player", query: marketplaceQuerySchema, summary: "Annonces du marché" },
   { method: "post", path: "/api/marketplace/listings", tag: "Économie", access: "player", body: createListingSchema, successStatus: 201,
     summary: "Mettre une carte en vente", description: "Répond 200 au lieu de 201 si l’annonce identique existe déjà (rejeu)." },
