@@ -30,6 +30,7 @@ export default async function ProfilePage() {
         <Stat label="Gagné au total" value={formatCoins(BigInt(profile.wallet.lifetimeEarnings))} />
         <Stat label="Dépensé au total" value={formatCoins(BigInt(profile.wallet.lifetimeSpending))} />
       </dl>
+      <Button asChild variant="outline"><Link href="/profil/portefeuille">Voir mon portefeuille</Link></Button>
     </section>
 
     <section aria-labelledby="collection-title" className="space-y-4">
