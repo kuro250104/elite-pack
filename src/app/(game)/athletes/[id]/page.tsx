@@ -5,6 +5,8 @@ import { requireUser } from "@/lib/auth/authorization";
 import { ApiError } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 import { getAthleteSheet } from "@/server/athletes/encyclopedia";
+import { wishlistedEditionIds } from "@/server/wishlist/service";
+import { WishlistButton } from "@/components/collection/wishlist-button";
 import { rarityPresentation } from "@/components/cards/athlete-card";
 import { ApprovedPortrait } from "@/components/athletes/athlete-portrait";
 import { GameNav } from "@/components/layout/game-nav";
@@ -24,6 +26,7 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
   const user = await requireUser();
   const { id } = await params;
   const sheet = await loadSheet(user.id, id);
+  const wishlisted = await wishlistedEditionIds(user.id, sheet.editions.filter((edition) => edition.owned === 0).map((edition) => edition.id));
   const identity: [string, string | null][] = [["Sport", sheet.sport], ["Nationalité", sheet.nationality], ["Équipe", sheet.currentTeam],
     ["Poste", sheet.position], ["Prestige", `${sheet.prestigeScore.toLocaleString("fr-FR")} / 100`]];
   const owned = sheet.editions.filter((edition) => edition.owned > 0).length;
@@ -63,6 +66,9 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
           <p className="mt-1 font-semibold text-foreground [overflow-wrap:anywhere]">{edition.name}</p>
           <p className="mt-2 text-xs text-muted-foreground">{edition.owned > 0 ? `${edition.owned} exemplaire${edition.owned > 1 ? "s" : ""} possédé${edition.owned > 1 ? "s" : ""}` : edition.discovered ? "Déjà obtenue, plus possédée" : "Manquante"}
             {edition.maxSupply !== null && ` · Tirage limité à ${edition.maxSupply.toLocaleString("fr-FR")}`}{edition.soldOut ? " · Épuisée" : ""}{!edition.obtainable ? " · Plus disponible en booster" : ""}</p>
+          {edition.owned === 0 && (edition.obtainable || wishlisted.has(edition.id)) && <div className="mt-3">
+            <WishlistButton editionId={edition.id} wishlisted={wishlisted.has(edition.id)} />
+          </div>}
         </li>)}
       </ul>
       {sheet.editions.length === 0 && <p className="text-sm text-muted-foreground">Aucune édition n’est encore disponible pour cet athlète.</p>}
