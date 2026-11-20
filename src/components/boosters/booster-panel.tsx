@@ -16,7 +16,9 @@ export type BoosterPanelInitial = {
   weights: { rarity: CardRarity; weightBasisPoints: number }[]; passive: PassiveSnapshot;
   welcomeAvailable: number; welcomeClaimed: boolean;
 };
-const cardSchema = z.object({ instanceId: z.string(), editionId: z.string(), athleteId: z.string(), name: z.string(), sport: z.string(), rarity: z.enum(["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHIC"]), editionName: z.string(), nationality: z.string().nullable(), prestigeScore: z.number(), serialNumber: z.number().nullable(), maxSupply: z.number().nullable(), acquiredAt: z.string() });
+const cardSchema = z.object({ instanceId: z.string(), editionId: z.string(), athleteId: z.string(), name: z.string(), sport: z.string(), rarity: z.enum(["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHIC"]), editionName: z.string(), nationality: z.string().nullable(), prestigeScore: z.number(), serialNumber: z.number().nullable(), maxSupply: z.number().nullable(), acquiredAt: z.string(),
+  // Approved portrait only (filtered server-side); without it the card shows its fallback visual.
+  image: z.object({ url: z.string(), originalUrl: z.string(), attribution: z.string(), license: z.string(), licenseUrl: z.string() }).nullable().optional() });
 const openingSchema = z.object({ data: z.object({ openingId: z.string(), replay: z.boolean(), cards: z.array(cardSchema), source: z.enum(["passive", "welcome"]) }) });
 type OpenBody = { boosterTypeId: string; sportId: string; source: "passive" | "welcome" };
 class ApiFailure extends Error { constructor(message: string, readonly definitive: boolean) { super(message); } }

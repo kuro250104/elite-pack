@@ -1,4 +1,5 @@
 import "server-only";
+import { displayableAthleteImage } from "@/server/images/presentation";
 import { z } from "zod";
 import { db } from "@/lib/db/prisma";
 import { Prisma, type PrismaClient } from "@/generated/prisma/client";
@@ -141,12 +142,15 @@ export async function listMarketplace(actorId: string, input: unknown, client: P
       ${from} ORDER BY ${order}, l.id DESC LIMIT ${params.pageSize} OFFSET ${(params.page - 1) * params.pageSize}`,
     client.$queryRaw<{ total: bigint }[]>`SELECT COUNT(*) AS total ${from}`,
   ]);
+  // One query for the page's portraits; the display filter keeps unapproved images hidden.
+  const images = new Map((await client.athleteImage.findMany({ where: { athleteId: { in: [...new Set(rows.map((row) => row.athleteId))] } } }))
+    .map((image) => [image.athleteId, displayableAthleteImage(image)]));
   return {
     listings: rows.map((row) => ({ id: row.id, price: String(row.price), createdAt: row.createdAt.toISOString(),
       seller: row.seller ?? "Joueur anonyme", mine: row.sellerId === actorId, baseValue: String(row.baseValue),
       card: { instanceId: row.cardInstanceId, editionId: row.editionId, athleteId: row.athleteId, name: row.name, sport: row.sport, rarity: row.rarity,
         editionName: row.editionName, nationality: row.nationality, prestigeScore: Number(row.prestige),
-        serialNumber: row.serialNumber, maxSupply: row.maxSupply } })),
+        serialNumber: row.serialNumber, maxSupply: row.maxSupply, image: images.get(row.athleteId) ?? null } })),
     total: Number(count?.total ?? 0), page: params.page, pageSize: params.pageSize,
   };
 }

@@ -23,6 +23,12 @@ const licenses = [
   { id: "CC0-1.0", name: "CC0 1.0 — domaine public", url: "https://creativecommons.org/publicdomain/zero/1.0/" },
   { id: "CC-BY-4.0", name: "CC BY 4.0 — attribution", url: "https://creativecommons.org/licenses/by/4.0/" },
   { id: "CC-BY-SA-4.0", name: "CC BY-SA 4.0 — attribution et partage à l’identique", url: "https://creativecommons.org/licenses/by-sa/4.0/" },
+  { id: "CC-BY-3.0", name: "CC BY 3.0 — attribution", url: "https://creativecommons.org/licenses/by/3.0/" },
+  { id: "CC-BY-SA-3.0", name: "CC BY-SA 3.0 — attribution et partage à l’identique", url: "https://creativecommons.org/licenses/by-sa/3.0/" },
+  { id: "CC-BY-2.5", name: "CC BY 2.5 — attribution", url: "https://creativecommons.org/licenses/by/2.5/" },
+  { id: "CC-BY-SA-2.5", name: "CC BY-SA 2.5 — attribution et partage à l’identique", url: "https://creativecommons.org/licenses/by-sa/2.5/" },
+  { id: "CC-BY-2.0", name: "CC BY 2.0 — attribution", url: "https://creativecommons.org/licenses/by/2.0/" },
+  { id: "CC-BY-SA-2.0", name: "CC BY-SA 2.0 — attribution et partage à l’identique", url: "https://creativecommons.org/licenses/by-sa/2.0/" },
 ];
 
 function safeLink(value: string | null): string | null {

@@ -1,4 +1,5 @@
 import "server-only";
+import { displayableAthleteImage } from "@/server/images/presentation";
 import { z } from "zod";
 import { db } from "@/lib/db/prisma";
 import { Prisma, type PrismaClient } from "@/generated/prisma/client";
@@ -75,7 +76,7 @@ async function listOwned(actorId: string, params: CollectionQuery, client: Prism
     client.$queryRaw<{ total: bigint }[]>`SELECT COUNT(*) AS total ${from}`,
   ]);
   const instances = await client.cardInstance.findMany({ where: { id: { in: rows.map((row) => row.id) } },
-    include: { edition: { include: { athlete: { include: { sport: true } } } } } });
+    include: { edition: { include: { athlete: { include: { sport: true, image: true } } } } } });
   const { bankResaleBasisPoints } = await client.gameConfiguration.findUniqueOrThrow({ where: { id: "default" }, select: { bankResaleBasisPoints: true } });
   const byId = new Map(instances.map((instance) => [instance.id, instance]));
   const ordered = rows.flatMap((row) => byId.get(row.id) ?? []);
@@ -90,7 +91,7 @@ async function listOwned(actorId: string, params: CollectionQuery, client: Prism
     prestigeScore: card.edition.athlete.prestigeOverride ?? card.edition.athlete.prestigeScore,
     serialNumber: card.serialNumber, maxSupply: card.edition.maxSupply, acquiredAt: card.acquiredAt.toISOString(),
     baseValue: String(card.edition.baseValue), bankPrice: String(bankResalePrice(card.edition.baseValue, bankResaleBasisPoints)),
-    listing: listings.get(card.id) ?? null,
+    listing: listings.get(card.id) ?? null, image: displayableAthleteImage(card.edition.athlete.image),
   }));
   return { status: "owned" as const, cards, missing: [] as MissingCardView[], total: Number(count?.total ?? 0),
     page: params.page, pageSize: params.pageSize,
