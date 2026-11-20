@@ -1,0 +1,70 @@
+Issue Id,Parent Id,Parent,Issue Type,Summary,Priority,Story point estimate,Labels,Labels,Labels,Description
+1,,SCRUM-19,Story,US 5.3 — Consulter l'historique de mon portefeuille (US stagiaire),Medium,3,stagiaire,fullstack,persona-gamification,"En tant que *joueur* (persona Thomas pour les échanges, persona Inès pour les statistiques — voir docs/personas.md), je veux voir mon solde et l'historique de toutes les pièces gagnées et dépensées, afin de comprendre d'où vient mon argent et de suivre mes échanges.
+
+Seconde user story fullstack du stagiaire (après SCRUM-88). Lecture seule : aucune écriture dans le portefeuille. Prévue par AGENTS.md (route {{GET /api/me/wallet}}, historique des transactions) et jamais réalisée.
+
+h3. Contrat d'API
+||Méthode||Route||Entrée||Réponse||Erreurs||
+|GET|/api/me/wallet|page, pageSize (1 à 50, défaut 20), type (facultatif)|solde, total gagné, total dépensé (chaînes décimales) ; transactions paginées, de la plus récente à la plus ancienne : id, type, libellé français, détail (carte, annonce ou booster concerné), montant signé, solde après, date|400, 401, 429|
+
+h3. Libellés des types
+||Type||Libellé||Détail affiché||
+|INITIAL_BALANCE|Solde de départ|—|
+|REWARD|Récompense|—|
+|BANK_SALE|Revente à la banque|athlète et édition de la carte revendue|
+|MARKETPLACE_SALE|Vente sur le marché|athlète et édition de la carte vendue|
+|MARKETPLACE_PURCHASE|Achat sur le marché|athlète et édition de la carte achetée|
+|BOOSTER_PURCHASE|Achat de booster|nom du booster|
+|ADMIN_ADJUSTMENT|Ajustement administrateur|—|
+
+h3. Critères d'acceptation
+* *Étant donné* un joueur connecté, *quand* il ouvre « Mon portefeuille » depuis son profil, *alors* il voit son solde, le total gagné et le total dépensé
+* *Étant donné* des transactions, *quand* il consulte l'historique, *alors* elles sont triées de la plus récente à la plus ancienne, avec libellé français, montant en vert (+) ou en rouge (−), solde après et date en heure de Paris
+* *Étant donné* une revente ou un échange sur le marché, *quand* il lit la ligne, *alors* il voit l'athlète et l'édition concernés
+* *Étant donné* le filtre « Type », *quand* il choisit « Achat sur le marché », *alors* seules ces transactions sont listées, avec la pagination conservée
+* *Étant donné* un nouveau joueur, *quand* il ouvre la page, *alors* il voit uniquement le solde de départ
+* *Étant donné* deux joueurs, *quand* l'un consulte son portefeuille, *alors* il ne voit jamais les transactions de l'autre
+* *Étant donné* un visiteur non connecté, *quand* il appelle l'API, *alors* il reçoit 401
+* *Étant donné* un écran 800x600 ou un mobile, *quand* il ouvre la page, *alors* aucun défilement horizontal n'apparaît
+* Aucune donnée interne (clé d'idempotence, métadonnées brutes) n'est exposée
+
+h3. Points de départ
+* Prompt prêt à l'emploi pour l'assistant IA : {{docs/stage/prompt-ia-portefeuille.md}}
+* Données : modèles {{Wallet}} et {{WalletTransaction}} (index walletId, createdAt) dans {{prisma/schema.prisma}} ; {{referenceId}} = exemplaire (banque), annonce (marché) ou type de booster (achat)
+* Modèles à suivre : {{src/server/collection/service.ts}}, {{src/app/api/me/cards/route.ts}}, {{src/app/(game)/profil/page.tsx}}
+* Montants : {{formatCoins}} de {{src/lib/currency.ts}}
+
+h3. Définition de prêt
+* SCRUM-88 terminée ou en revue
+* Environnement local installé ({{db:seed}}, {{db:seed-demo}})
+
+h3. Définition de terminé
+* Branche {{feat/<clé>-wallet-history}} depuis {{dev}}, PR vers {{dev}} avec la clé Jira dans le titre
+* Lint, types, tests unitaires, PostgreSQL et E2E verts en CI
+* Revue du tuteur approuvée, PR fusionnée dans dev puis promue vers main le jour même
+* Aucune migration (lecture seule)"
+2,1,,Subtask,[Back] Service et route GET /api/me/wallet,Medium,,stagiaire,back,,"h3. Travaux
+* {{src/server/wallet/history.ts}} : solde et totaux, historique paginé et filtrable, libellés français, détails résolus par lots (pas de requête N+1)
+* {{src/app/api/me/wallet/route.ts}} : {{requireApiUser}}, {{reserveGameRequest}}, {{success}}, {{failure}}
+* Documentation OpenAPI ({{src/server/api-docs/openapi.ts}})
+
+h3. Définition de terminé
+* Validation Zod, contrôle d'authentification ; aucun identifiant de joueur lu dans la requête
+* Tests unitaires et PostgreSQL ajoutés et verts en CI
+* Aucune régression : {{npm run lint}}, {{npm run typecheck}}, {{npm test}}"
+3,1,,Subtask,[Front] Page « Mon portefeuille » et lien depuis le profil,Medium,,stagiaire,front,,"h3. Travaux
+* Page {{/profil/portefeuille}} : solde et totaux, filtre par type, tableau ou liste responsive, pagination, état vide
+* Lien « Voir mon portefeuille » sur {{/profil}}
+* Story Ladle de la ligne de transaction
+
+h3. Définition de terminé
+* États chargement, vide, erreur et succès gérés
+* Libellés en français, accessible au clavier, lisible en 800x600 et sur mobile
+* Parcours couvert par un test Playwright"
+4,1,,Subtask,"[Tests] Portefeuille : PostgreSQL, API et parcours",Medium,,stagiaire,tests,,"h3. Travaux
+* PostgreSQL : tri, pagination, filtre, totaux, détails résolus, isolation entre joueurs
+* API : 401, paramètres invalides → 400, identifiant pris dans la session
+* Playwright : profil → portefeuille → filtre ; 800x600 sans défilement horizontal
+
+h3. Validation
+* Tests verts en CI"

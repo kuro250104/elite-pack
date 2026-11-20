@@ -221,22 +221,27 @@ Le détail des règles de branches et de revue est dans [CONTRIBUTING.md](../CON
 
 ## 8. Stage d’une journée : déroulé
 
-Pour un stage de 11 h à 17 h sur un ticket fullstack (par exemple [SCRUM-88](https://lemeurvincent31.atlassian.net/browse/SCRUM-88), la liste de souhaits). **Le ticket doit être fusionné le jour même** : si le temps manque, le tuteur termine sur la même branche, et le stagiaire garde ses commits.
+Stage de 11 h à 17 h sur **deux user stories fullstack**, réalisées avec un assistant de code à partir de prompts prêts à l’emploi :
 
-| Heure | Stagiaire (au clavier) | Tuteur | Point de contrôle |
+1. [SCRUM-88](https://lemeurvincent31.atlassian.net/browse/SCRUM-88), la liste de souhaits, avec migration de la base : [prompt](stage/prompt-ia-scrum-88.md) ;
+2. US 5.3, l’historique du portefeuille, en lecture seule : [prompt](stage/prompt-ia-portefeuille.md).
+
+**Les deux doivent être fusionnées le jour même**, jusqu’à `main`. Si le temps manque, le tuteur termine sur la même branche, et le stagiaire garde ses commits.
+
+| Heure | Stagiaire | Tuteur | Point de contrôle |
 | --- | --- | --- | --- |
-| 11 h 00 | Accès, clone, `npm ci`, `.env`, base, `npm run dev` | Vérifie les accès GitHub et Jira, ouvre le carnet | L’application tourne |
-| 11 h 30 | Lit la méthode et le glossaire, répond aux quatre questions pour son ticket | Fait reformuler athlète, édition, exemplaire | Carnet : quatre réponses écrites |
-| 11 h 45 | Branche `feat/SCRUM-88-…`, modèle Prisma et migration | Pose les questions, notamment « qu’est-ce qui peut casser ? » | **Premier commit poussé** |
+| 11 h 00 | Accès, clone, `npm ci`, `.env`, base, `db:seed-demo`, `npm run dev` ; compte Git personnel vérifié | Vérifie les accès GitHub et Jira, ouvre le carnet | L’application tourne |
+| 11 h 30 | Lit la méthode et le glossaire ; réponses aux quatre questions de SCRUM-88 | Fait reformuler athlète, édition, exemplaire | Carnet : quatre réponses écrites |
+| 11 h 45 | Lance le prompt SCRUM-88 et suit chaque étape | Pose les questions : « que fait cette migration ? qu’est-ce qui peut casser ? » | **Premiers commits poussés** |
 | 12 h 30 | Pause | | |
-| 13 h 30 | Service et routes API, validation Zod, tests PostgreSQL | Relit au fil de l’eau | Tests back verts |
+| 13 h 30 | Relit le diff de SCRUM-88, vérifie le parcours dans le navigateur, PR vers `dev` | Revue de la PR, demande des explications fichier par fichier | PR SCRUM-88 ouverte, CI verte |
+| 14 h 15 | Lance le prompt de l’US 5.3 | Fusionne SCRUM-88 dans `dev` après approbation | SCRUM-88 sur `dev` |
 | 14 h 45 | Point carnet (10 min) | Relit le carnet avec le stagiaire | Blocages notés, portée ajustée si besoin |
-| 15 h 00 | Interface (bouton, onglet), composants du design system | Vérifie les états erreur et vide | Parcours manuel réussi |
-| 16 h 00 | Test Playwright, `lint`, `typecheck`, PR vers `dev` | Revue de la PR | CI verte |
-| 16 h 40 | Corrections de revue | Fusion dans `dev`, puis promotion `dev` → `main` | **Travail sur `main`** |
-| 16 h 50 | Bilan dans le carnet | Bilan tuteur, tickets d’amélioration | Rapports joints au ticket Jira |
+| 15 h 00 | Relit le diff de l’US 5.3, démontre « revendre une carte puis la retrouver dans l’historique », PR vers `dev` | Revue de la PR | PR US 5.3 ouverte, CI verte |
+| 16 h 15 | Corrections de revue | Fusion dans `dev`, puis promotion `dev` → `main` | **Les deux US sur `main`** |
+| 16 h 40 | Bilan dans le carnet : ce qu’il sait expliquer, ce que l’IA a fait | Bilan tuteur, tickets d’amélioration | Rapports joints au ticket Jira |
 
-Si la portée ne tient pas dans la journée, on retire d’abord les éléments marqués *bonus* dans le ticket, jamais les tests.
+L’assistant de code accélère l’écriture, pas la compréhension : le stagiaire doit pouvoir expliquer chaque fichier de ses deux PR. Si la portée ne tient pas dans la journée, on retire d’abord les éléments marqués *bonus*, jamais les tests.
 
 ---
 
