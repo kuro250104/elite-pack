@@ -31,6 +31,7 @@
     "game:prepare": "node --conditions=react-server --import tsx scripts/game/prepare.ts",
     "prestige:recompute": "node --conditions=react-server --import tsx scripts/prestige/recompute.ts",
     "boosters:grant": "node --conditions=react-server --import tsx scripts/boosters/grant.ts",
+    "images:commons": "node --conditions=react-server --import tsx scripts/images/commons.ts",
     "ladle": "ladle serve",
     "ladle:build": "ladle build"
   },

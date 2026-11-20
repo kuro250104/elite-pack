@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasCompatibleImageLicense, imageReviewCommandSchema, isAllowedImageUrl, isPublicHttpsUrl } from "@/server/images/validation";
+import { commonsLicense, hasCompatibleImageLicense, imageReviewCommandSchema, isAllowedImageUrl, isPublicHttpsUrl } from "@/server/images/validation";
 
 describe("Validation des droits d’image", () => {
   it.each([
@@ -33,8 +33,22 @@ describe("Validation des droits d’image", () => {
     expect(hasCompatibleImageLicense("CC-BY-4.0", "https://creativecommons.org/licenses/by/4.0/")).toBe(true);
     expect(hasCompatibleImageLicense("CC0-1.0", "https://creativecommons.org/publicdomain/zero/1.0/")).toBe(true);
     expect(hasCompatibleImageLicense("CC-BY-SA-4.0", "https://creativecommons.org/licenses/by-sa/4.0/")).toBe(true);
-    expect(hasCompatibleImageLicense("CC-BY-3.0", "https://creativecommons.org/licenses/by/3.0/")).toBe(false);
+    expect(hasCompatibleImageLicense("CC-BY-3.0", "https://creativecommons.org/licenses/by/3.0/")).toBe(true);
+    expect(hasCompatibleImageLicense("CC-BY-3.0", "https://creativecommons.org/licenses/by/3.0/de/")).toBe(false);
+    expect(hasCompatibleImageLicense("CC-BY-NC-4.0", "https://creativecommons.org/licenses/by-nc/4.0/")).toBe(false);
     expect(hasCompatibleImageLicense("CC-BY-4.0", "https://creativecommons.org/licenses/by-sa/4.0/")).toBe(false);
     expect(hasCompatibleImageLicense("CC-BY-4.0", null)).toBe(false);
+  });
+  it("reconnaît les licences déclarées par Wikimedia Commons et refuse les versions portées ou non commerciales", () => {
+    expect(commonsLicense("CC BY-SA 4.0", "https://creativecommons.org/licenses/by-sa/4.0")).toBe("CC-BY-SA-4.0");
+    expect(commonsLicense("CC0", "http://creativecommons.org/publicdomain/zero/1.0/deed.en")).toBe("CC0-1.0");
+    expect(commonsLicense("CC BY 2.0", "https://creativecommons.org/licenses/by/2.0")).toBe("CC-BY-2.0");
+    expect(commonsLicense("CC BY-SA 3.0", "//creativecommons.org/licenses/by-sa/3.0/legalcode")).toBe("CC-BY-SA-3.0");
+    expect(commonsLicense("CC BY-SA 3.0 de", "https://creativecommons.org/licenses/by-sa/3.0/de/")).toBeNull();
+    expect(commonsLicense("CC BY-SA 3.0", "https://creativecommons.org/licenses/by-sa/3.0/de/")).toBeNull();
+    expect(commonsLicense("CC BY 4.0", "https://creativecommons.org/licenses/by-sa/4.0/")).toBeNull();
+    expect(commonsLicense("CC BY-NC 4.0", "https://creativecommons.org/licenses/by-nc/4.0/")).toBeNull();
+    expect(commonsLicense("Public domain", null)).toBeNull();
+    expect(commonsLicense("CC BY 4.0", "https://example.org/licenses/by/4.0/")).toBeNull();
   });
 });

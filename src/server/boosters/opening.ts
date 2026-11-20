@@ -1,4 +1,5 @@
 import "server-only";
+import { displayableAthleteImage } from "@/server/images/presentation";
 import { randomInt } from "node:crypto";
 import { z } from "zod";
 import { Prisma, type PrismaClient, type Rarity } from "@/generated/prisma/client";
@@ -40,7 +41,7 @@ export function selectOpeningRarity(weights: readonly RarityWeight[], roll: numb
 export interface OpenedCard {
   instanceId: string; editionId: string; athleteId: string; name: string; sport: string; rarity: Rarity;
   editionName: string; nationality: string | null; prestigeScore: number; serialNumber: number | null;
-  maxSupply: number | null; acquiredAt: string;
+  maxSupply: number | null; acquiredAt: string; image: ReturnType<typeof displayableAthleteImage>;
 }
 export interface BoosterOpeningResult {
   openingId: string; replay: boolean; cards: OpenedCard[]; source: "passive" | "welcome" | "inventory";
@@ -48,7 +49,7 @@ export interface BoosterOpeningResult {
 const cardSelection = {
   id: true, editionId: true, serialNumber: true, acquiredAt: true,
   edition: { select: { name: true, rarity: true, maxSupply: true, athlete: { select: {
-    id: true, name: true, nationality: true, prestigeScore: true, prestigeOverride: true, sport: { select: { nameFr: true } },
+    id: true, name: true, nationality: true, prestigeScore: true, prestigeOverride: true, sport: { select: { nameFr: true } }, image: true,
   } } } },
 } satisfies Prisma.CardInstanceSelect;
 async function openingResult(tx: Prisma.TransactionClient, id: string, source: "passive" | "welcome" | "inventory", replay: boolean): Promise<BoosterOpeningResult> {
@@ -58,6 +59,7 @@ async function openingResult(tx: Prisma.TransactionClient, id: string, source: "
     sport: card.edition.athlete.sport.nameFr, rarity: card.edition.rarity, editionName: card.edition.name,
     nationality: card.edition.athlete.nationality, prestigeScore: card.edition.athlete.prestigeOverride ?? card.edition.athlete.prestigeScore,
     serialNumber: card.serialNumber, maxSupply: card.edition.maxSupply, acquiredAt: card.acquiredAt.toISOString(),
+    image: displayableAthleteImage(card.edition.athlete.image),
   })) };
 }
 
