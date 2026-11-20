@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/authorization";
 import { db } from "@/lib/db/prisma";
-import { cn } from "@/lib/utils";
+import { CollectionTabs } from "@/components/collection/collection-tabs";
 import { listCollection, collectionProgress, collectionFacets, collectionQuerySchema, type CollectionQuery } from "@/server/collection/service";
 import { AthleteCard, rarityPresentation } from "@/components/cards/athlete-card";
 import { MissingCard } from "@/components/collection/missing-card";
@@ -46,11 +46,10 @@ export default async function CollectionPage({ searchParams }: {
         : `${collection.total.toLocaleString("fr-FR")} carte${collection.total > 1 ? "s" : ""} · Chaque exemplaire est conservé, y compris vos doublons.`}</p>
     </header>
     <CollectionProgress progress={progress} />
-    <nav aria-label="Affichage de la collection" className="flex gap-2">
-      {([["owned", "Mes cartes"], ["missing", "Cartes manquantes"]] as const).map(([status, label]) =>
-        <Link key={status} href={href(query, { status, page: 1 })} aria-current={query.status === status ? "page" : undefined}
-          className={cn("rounded-md border px-4 py-2 text-sm font-medium", query.status === status ? "bg-primary text-primary-foreground" : "hover:bg-secondary")}>{label}</Link>)}
-    </nav>
+    <CollectionTabs current={query.status} links={{
+      owned: href(query, { status: "owned", page: 1 }),
+      missing: href(query, { status: "missing", page: 1 }),
+    }} />
     <form action="/collection" className="grid items-end gap-4 rounded-xl border bg-card p-5 sm:grid-cols-2 lg:grid-cols-4">
       <input type="hidden" name="status" value={query.status} />
       <div className="space-y-2"><label htmlFor="collection-query">Athlète</label><Input id="collection-query" name="query" defaultValue={query.query} maxLength={100} /></div>

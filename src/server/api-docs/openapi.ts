@@ -12,7 +12,9 @@ import { eventCreateSchema, eventPatchSchema } from "@/server/boosters/events";
 import { historyQuerySchema } from "@/server/boosters/history";
 import { openBoosterRequestSchema } from "@/server/boosters/opening";
 import { collectionQuerySchema } from "@/server/collection/service";
+import { wishlistAddSchema, wishlistQuerySchema } from "@/server/wishlist/service";
 import { bankSaleSchema } from "@/server/economy/bank";
+import { walletHistoryQuerySchema } from "@/server/wallet/history";
 import { imageReviewCommandSchema } from "@/server/images/validation";
 import { syncOptionsSchema } from "@/server/imports/sync";
 import { importCommandSchema } from "@/server/imports/validation";
@@ -58,6 +60,12 @@ export const apiOperations: ApiOperation[] = [
   // Collection et encyclopédie
   { method: "get", path: "/api/me/cards", tag: "Collection", access: "player", query: collectionQuerySchema,
     summary: "Cartes du joueur (paginées)", description: "`status=missing` liste les éditions encore manquantes. Les doublons sont comptés par édition." },
+  { method: "get", path: "/api/me/wishlist", tag: "Collection", access: "player", query: wishlistQuerySchema,
+    summary: "Liste de souhaits du joueur (paginée)" },
+  { method: "post", path: "/api/me/wishlist", tag: "Collection", access: "player", body: wishlistAddSchema, successStatus: 201,
+    summary: "Ajouter une édition à la liste de souhaits", description: "Renvoie 200 si l’édition figure déjà dans la liste." },
+  { method: "delete", path: "/api/me/wishlist/{editionId}", tag: "Collection", access: "player",
+    summary: "Retirer une édition de la liste de souhaits" },
   { method: "get", path: "/api/athletes", tag: "Collection", access: "player", query: encyclopediaQuerySchema,
     summary: "Encyclopédie des athlètes" },
   { method: "get", path: "/api/athletes/{id}", tag: "Collection", access: "player",
@@ -81,6 +89,8 @@ export const apiOperations: ApiOperation[] = [
   // Économie
   { method: "post", path: "/api/bank/sales", tag: "Économie", access: "player", body: bankSaleSchema, idempotency: "uuid",
     summary: "Revendre une carte à la banque", description: "Prix = valeur de l’édition × taux de rachat configuré. La carte doit appartenir au joueur et ne pas être en vente." },
+  { method: "get", path: "/api/me/wallet", tag: "Économie", access: "player", query: walletHistoryQuerySchema,
+    summary: "Portefeuille et historique paginé du joueur", description: "Montants en chaînes décimales. Filtrage facultatif par type de transaction." },
   { method: "get", path: "/api/marketplace", tag: "Économie", access: "player", query: marketplaceQuerySchema, summary: "Annonces du marché" },
   { method: "post", path: "/api/marketplace/listings", tag: "Économie", access: "player", body: createListingSchema, successStatus: 201,
     summary: "Mettre une carte en vente", description: "Répond 200 au lieu de 201 si l’annonce identique existe déjà (rejeu)." },
