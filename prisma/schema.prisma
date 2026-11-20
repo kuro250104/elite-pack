@@ -79,6 +79,7 @@ model User {
   passiveBoosters  PassiveBoosterState?
   cards            CardInstance[]
   discoveries      CardDiscovery[]
+  wishlistItems    WishlistItem[]
   listings         MarketplaceListing[] @relation("Seller")
   purchases        MarketplaceListing[] @relation("Buyer")
   boosterInventory BoosterInventory[]
@@ -219,9 +220,22 @@ model CardEdition {
   instances       CardInstance[]
   discoveries     CardDiscovery[]
   boosterEditions BoosterEdition[]
+  wishlistItems   WishlistItem[]
 
   @@index([athleteId])
   @@index([rarity, active])
+}
+
+model WishlistItem {
+  id        String      @id @default(cuid())
+  userId    String
+  editionId String
+  createdAt DateTime    @default(now()) @db.Timestamptz(3)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  edition   CardEdition @relation(fields: [editionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, editionId])
+  @@index([userId, createdAt])
 }
 
 model CardInstance {
