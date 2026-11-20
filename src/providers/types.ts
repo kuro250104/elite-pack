@@ -29,6 +29,12 @@ export interface ExternalHonour {
   team: string | null;
 }
 
+export interface ExternalTeam {
+  externalId: string;
+  name: string;
+  sportName: string | null;
+}
+
 export interface ExternalSport {
   externalId: string;
   providerName: string;
@@ -43,9 +49,22 @@ export interface AthleteProvider {
     listSports: boolean;
     athletesBySport: false;
     honours?: boolean;
+    /** Teams of a league and players of a team (bounded lists, never assumed exhaustive). */
+    teams?: boolean;
   };
   getAthlete(id: string): Promise<ExternalAthlete | null>;
   searchAthletes(query: string): Promise<ExternalAthlete[]>;
   getSports(): Promise<ExternalSport[]>;
   getHonours?(id: string): Promise<ExternalHonour[]>;
+  getTeamsByLeague?(league: string): Promise<ExternalTeam[]>;
+  /** Athletes of a team; staff members (coaches, managers) are excluded. */
+  getTeamPlayers?(teamId: string): Promise<ExternalAthlete[]>;
+}
+
+/** Provider HTTP refusal; the status lets batch imports wait after a 429 instead of failing. */
+export class ProviderRequestError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+    this.name = "ProviderRequestError";
+  }
 }

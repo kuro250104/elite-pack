@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
-import type { AthleteProvider, ExternalAthlete, ExternalHonour } from "../types";
-import { honoursResponseSchema, lookupResponseSchema, searchResponseSchema, sportsResponseSchema, type SportsDbPlayer } from "./schemas";
+import { ProviderRequestError, type AthleteProvider, type ExternalAthlete, type ExternalHonour, type ExternalTeam } from "../types";
+import { honoursResponseSchema, lookupResponseSchema, searchResponseSchema, sportsResponseSchema, teamsResponseSchema, type SportsDbPlayer } from "./schemas";
 
 const optionsSchema = z.object({
   apiKey: z.string().regex(/^\d+$/),
@@ -34,7 +34,7 @@ function mapPlayer(player: SportsDbPlayer): ExternalAthlete {
 
 /** Use one instance per import worker. Distributed workers require a shared limiter. */
 export class TheSportsDbProvider implements AthleteProvider {
-  readonly capabilities = { search: true, lookup: true, listSports: true, athletesBySport: false, honours: true } as const;
+  readonly capabilities = { search: true, lookup: true, listSports: true, athletesBySport: false, honours: true, teams: true } as const;
   private readonly options: z.output<typeof optionsSchema>;
   private queue: Promise<unknown> = Promise.resolve();
   private nextRequestAt = 0;
@@ -72,7 +72,7 @@ export class TheSportsDbProvider implements AthleteProvider {
           this.nextRequestAt = Date.now() + Math.max(60_000, Number.isFinite(retryAfter) ? Math.min(retryAfter * 1000, 120_000) : 60_000);
         }
         if (!retryable || attempt === this.options.maxRetries) {
-          throw new Error(`Le fournisseur sportif a refusé la requête (${response.status}).`);
+          throw new ProviderRequestError(`Le fournisseur sportif a refusé la requête (${response.status}).`, response.status);
         }
       }
       throw new Error("Le fournisseur sportif est indisponible.");
@@ -98,6 +98,19 @@ export class TheSportsDbProvider implements AthleteProvider {
     const data = honoursResponseSchema.parse(await this.request("lookuphonours.php", { id: validId }));
     return (data.honours ?? []).map((honour) => ({ externalId: honour.idHonour, title: honour.strHonour,
       season: text(honour.strSeason), team: text(honour.strTeam) }));
+  }
+
+  async getTeamsByLeague(league: string): Promise<ExternalTeam[]> {
+    const validLeague = z.string().trim().min(2).max(100).parse(league);
+    const data = teamsResponseSchema.parse(await this.request("search_all_teams.php", { l: validLeague }));
+    return (data.teams ?? []).map((team) => ({ externalId: team.idTeam, name: team.strTeam, sportName: text(team.strSport) }));
+  }
+
+  async getTeamPlayers(teamId: string): Promise<ExternalAthlete[]> {
+    const validId = z.string().regex(/^\d+$/).parse(teamId);
+    // lookup_all_players.php answers with the same "player" key as the search endpoint.
+    const data = searchResponseSchema.parse(await this.request("lookup_all_players.php", { id: validId }));
+    return (data.player ?? []).filter((player) => text(player.strStatus)?.toLowerCase() !== "coaching").map(mapPlayer);
   }
 
   async getSports() {

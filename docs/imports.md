@@ -89,3 +89,20 @@ Les athlètes liés à TheSportsDB sont rafraîchis par lots, les moins récemme
   - `SYNC_ACTOR_ID` : identifiant d’un compte administrateur, auteur des imports et des entrées du journal.
 
   Sans ces variables, la route répond 503. Un mauvais secret reçoit 401 sans lancer de lot. La réponse ne contient que des compteurs.
+
+## Import en masse par ligue
+
+Pour obtenir un catalogue jouable, `npm run imports:bulk` importe les effectifs de ligues entières. Les tirages restent servis par PostgreSQL : aucun appel au fournisseur n’est fait pendant une ouverture.
+
+```sh
+npm run imports:bulk -- --actor-id ID_ADMIN --confirm --activate-sports \
+  --league "French Ligue 1" --league "English Premier League" --league "NBA" \
+  --league "NHL" --league "French Top 14" --league "Formula 1"
+```
+
+- **Parcours** : `search_all_teams.php?l=` liste les équipes de la ligue, puis `lookup_all_players.php?id=` l’effectif de chaque équipe. L’encadrement (statut `Coaching`) est exclu. Le palmarès est récupéré pour chaque nouvel athlète, sauf avec `--no-honours`.
+- **Limites de la clé gratuite** ([documentation](https://www.thesportsdb.com/documentation), vérifiée le 17 novembre 2026) : 10 équipes par ligue et 10 joueurs par équipe, soit une centaine d’athlètes par ligue au plus. Les équipes sont renvoyées par ordre alphabétique : certains clubs (par exemple le PSG) n’apparaissent pas. Une clé personnelle relève ces limites sans modification du code.
+- **Sports** : la clé gratuite ne liste que deux sports (`all_sports.php`). Un sport nommé par une équipe mais absent du catalogue est créé inactif, traduit si le lexique le connaît (journal `SPORT_CREATED_FROM_IMPORT`). Un import ultérieur de `all_sports.php` rattache ce sport à son identifiant au lieu de le dupliquer. `--activate-sports` active les sports concernés par l’intermédiaire du service administratif ; un sport sans nom français reste inactif.
+- **Éditions** : chaque athlète reçoit les six éditions génériques illimitées (Classique à Mythique), rattachées au booster Découverte multisport avec son sport (`--no-booster` pour ne créer que les éditions). Les éditions existantes et leurs réglages administratifs ne sont jamais modifiés. Le prestige est recalculé une fois par sport à la fin, ce qui revalorise les éditions.
+- **Quota et reprise** : chaque appel réserve le quota partagé et respecte un espacement de 6 s (`--interval-ms`). Mesuré le 17 novembre 2026 : la clé gratuite renvoie HTTP 429 après une dizaine d’appels par minute, bien en dessous des 30 annoncés. Avec le palmarès (un appel par athlète), six ligues prennent environ une heure ; avec `--no-honours`, quelques minutes, le palmarès pouvant être récupéré ensuite par `--refresh-existing` ou par la synchronisation périodique. Après un HTTP 429, l’import attend 65 s puis reprend, cinq fois au plus par appel. Chaque athlète est validé dans sa propre transaction : un import interrompu se relance tel quel, les athlètes déjà liés sont sautés sans appel au fournisseur (`--refresh-existing` pour les réimporter ; la synchronisation périodique s’en charge sinon). `--missing-honours` ne reprend que les athlètes dont le palmarès n’a jamais été récupéré, pour terminer une passe interrompue. Une coupure réseau ou une erreur 5xx est réessayée trois fois, après 30, 60 puis 90 s.
+- **Erreurs** : un homonyme non vérifié (`IDENTITY_REVIEW_REQUIRED`) ou un sport ambigu est listé dans `failures` sans interrompre le reste. Le résumé est journalisé dans `ATHLETE_BULK_IMPORT`.
