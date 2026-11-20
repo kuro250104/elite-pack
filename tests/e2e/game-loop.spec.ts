@@ -54,6 +54,12 @@ test("booster de bienvenue : cinq cartes frappées par le serveur sont révélé
     const result = (await response.json()).data;
     expect(result.cards).toHaveLength(5);
     expect(result.source).toBe("welcome");
+    // Reveal: tear the pack, flip the first card (the least rare), then reveal the rest at once.
+    await page.getByRole("button", { name: /^Déchirer le booster/ }).click();
+    await expect(page.getByText("Carte 1 / 5")).toBeVisible();
+    await page.getByRole("button", { name: "Retourner la carte 1 sur 5" }).click();
+    await expect(page.getByRole("button", { name: "Carte suivante", exact: true })).toBeFocused();
+    await page.getByRole("button", { name: "Tout révéler", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Vos nouvelles cartes", exact: true })).toBeVisible();
     await expect(page.locator("article")).toHaveCount(5);
     expect(await prisma.cardInstance.count({ where: { ownerId: userId } })).toBe(5);
