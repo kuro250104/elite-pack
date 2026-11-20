@@ -27,10 +27,12 @@ export async function importSports(tx: Prisma.TransactionClient, externalSports:
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('sports:catalogue', 0))`;
   let created = 0;
   for (const sport of sports) {
-    const existing = await tx.sport.findUnique({where: {providerId: sport.externalId}});
+    // A sport first created from a team listing has no provider ID yet: adopt it instead of creating a duplicate.
+    const existing = await tx.sport.findUnique({where: {providerId: sport.externalId}})
+      ?? (await tx.sport.findMany({where: {providerId: null}})).find((row) => normalizeSportName(row.providerName) === normalizeSportName(sport.providerName));
     if (existing) {
       // Traduction, activation et icône appartiennent à l’administrateur.
-      await tx.sport.update({where: {id: existing.id}, data: {providerName: sport.providerName, category: sport.category}});
+      await tx.sport.update({where: {id: existing.id}, data: {providerId: sport.externalId, providerName: sport.providerName, category: sport.category}});
     } else {
       await tx.sport.create({data: {providerId: sport.externalId, providerName: sport.providerName,
         slug: `thesportsdb-${sport.externalId}`, nameFr: frenchSportName(sport), category: sport.category, active: false}});
@@ -39,6 +41,24 @@ export async function importSports(tx: Prisma.TransactionClient, externalSports:
   }
   await tx.adminAuditLog.create({data: {actorId, action: "IMPORT_SPORTS", entityType: "Sport", after: {processed: sports.length, created}}});
   return {processed: sports.length, created};
+}
+/**
+ * Returns the sport named by the provider, creating it (inactive, translated when the lexicon knows it) when missing.
+ * The free TheSportsDB key lists only two sports, while team listings name many more.
+ */
+export async function ensureSportByProviderName(tx: Prisma.TransactionClient, providerName: string, actorId: string) {
+  await assertAdminActor(tx, actorId);
+  const name = z.string().trim().min(1).max(100).parse(providerName);
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('sports:catalogue', 0))`;
+  const matches = (await tx.sport.findMany()).filter((sport) => normalizeSportName(sport.providerName) === normalizeSportName(name));
+  if (matches.length > 1) throw new ApiError("SPORT_MAPPING_REQUIRED", "Plusieurs sports portent ce nom fournisseur ; corrigez le catalogue.", 409);
+  if (matches[0]) return {sport: matches[0], created: false};
+  const slug = `thesportsdb-${normalizeSportName(name).normalize("NFD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+  const sport = await tx.sport.create({data: {slug, providerName: name, providerId: null,
+    nameFr: translations[normalizeSportName(name)] ?? `Sport à traduire (${name})`, category: null, active: false}});
+  await tx.adminAuditLog.create({data: {actorId, action: "SPORT_CREATED_FROM_IMPORT", entityType: "Sport", entityId: sport.id,
+    after: {providerName: name, nameFr: sport.nameFr}}});
+  return {sport, created: true};
 }
 export async function updateSport(tx: Prisma.TransactionClient, id: string, patch: SportPatch, actorId: string) {
   await assertAdminActor(tx, actorId);
