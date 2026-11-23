@@ -145,7 +145,7 @@ jobs:
         run: npm run test:e2e
       - name: Conserver le rapport en cas d'échec
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rapport-playwright
           path: |
@@ -189,7 +189,7 @@ jobs:
       - name: Construire la documentation Ladle
         run: npm run ladle:build
       - name: Publier la documentation comme artefact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: documentation-composants
           path: build-ladle/
